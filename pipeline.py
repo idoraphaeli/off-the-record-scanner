@@ -9,6 +9,9 @@ DISC_RADIUS_RATIO = 0.95
 LABEL_RADIUS_RATIO = 0.40
 POLAR_ANGLE_STEPS = 3600   # angular resolution of the unwrap: one column per 0.1°
 OUTER_TRIM_RATIO = 0.97
+GROOVE_SUPPRESS = 0.5   # how hard to cancel the groove direction (explained below)
+ALIGN_SEARCH_DEG = 10    # search window (deg) around 180deg for the fine alignment
+SCRATCH_THRESHOLD = 25   # a candidate-map pixel counts as a scratch above this
 
 
 def load_image(path):
@@ -69,18 +72,65 @@ def crop_ring(polar, inner_radius):
     outer_radius = polar.shape[0]
     return polar[inner_radius:int(outer_radius * OUTER_TRIM_RATIO)]
 
+def scratch_map(ring):
+    # Local contrast equalization: evens out uneven lighting so a bright patch
+    # doesn't fire stronger than a dark one.
+    eq = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(ring)
+    eq = cv2.GaussianBlur(eq, (3, 3), 0)   # small denoise before measuring gradients
+
+    # Sobel measures brightness change in one direction:
+    #   gx (dx=1) reacts to VERTICAL lines   -> scratches
+    #   gy (dy=1) reacts to HORIZONTAL lines  -> grooves
+    gx = cv2.Sobel(eq, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(eq, cv2.CV_32F, 0, 1, ksize=3)
+
+    # Scratch response minus PART of the groove response. Partial (0.5), not full,
+    # so a diagonal scratch (which excites both directions) still survives.
+    scratch = np.clip(np.abs(gx) - GROOVE_SUPPRESS * np.abs(gy), 0, None)
+
+    # Scale to contrast units (a 3x3 Sobel amplifies ~4x). Do NOT normalize to the
+    # image max — that would blow up noise on a clean record.
+    return np.clip(scratch / 4.0, 0, 255).astype(np.uint8)
+
+def _best_shift(ring_a, ring_b):
+    # The two photos are ~180deg apart, so the true horizontal shift is near half
+    # the width. We search only a small window around it (NOT globally) -- this is
+    # what stops us from locking onto the glare, which aligns at shift 0.
+    # NOTE: we align on the RINGS (groove structure), never on the scratch maps.
+    width = ring_a.shape[1]
+    base = width // 2
+    span = int(width * ALIGN_SEARCH_DEG / 360)
+    a = ring_a.astype(np.float32) - float(ring_a.mean())
+    b = ring_b.astype(np.float32) - float(ring_b.mean())
+    best_shift, best_score = base, -1e18
+    for s in range(base - span, base + span + 1, 2):
+        score = float(np.sum(a * np.roll(b, s, axis=1)))  # higher = better match
+        if score > best_score:
+            best_score, best_shift = score, s
+    return best_shift
+
+
+def align_and_confirm(ring_a, map_a, ring_b, map_b):
+    shift = _best_shift(ring_a, ring_b)
+    map_b_aligned = np.roll(map_b, shift, axis=1)
+    # A real scratch appears in BOTH maps at the same spot -> logical AND.
+    # Glare appears in only one -> dropped.
+    confirmed = (map_a > SCRATCH_THRESHOLD) & (map_b_aligned > SCRATCH_THRESHOLD)
+    return confirmed.astype(np.uint8) * 255, shift
 
 if __name__ == "__main__":
     import sys
-    img = load_image(sys.argv[1])
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    center, inner_r, outer_r = find_disc(gray)
-    print("center:", center, "inner:", inner_r, "outer:", outer_r)
+    def process_image(path):
+        img = load_image(path)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        center, inner_r, outer_r = find_disc(gray)
+        ring = crop_ring(unwrap(gray, center, outer_r), inner_r)
+        return ring, scratch_map(ring)
 
-    polar = unwrap(gray, center, outer_r)
-    print("polar shape:", polar.shape, "(rows=radius, cols=angle)")
-    ring = crop_ring(polar, inner_r)
-    print("ring shape:", ring.shape)
-    cv2.imencode(".jpg", ring)[1].tofile("crop_check.jpg")
-    print("saved crop_check.jpg")
+    ring_a, map_a = process_image(sys.argv[1])
+    ring_b, map_b = process_image(sys.argv[2])
+    confirmed, shift = align_and_confirm(ring_a, map_a, ring_b, map_b)
+    print("shift:", shift, "  confirmed pixels:", int(np.count_nonzero(confirmed)))
+    cv2.imencode(".jpg", confirmed)[1].tofile("confirmed_check.jpg")
+    print("saved confirmed_check.jpg")
