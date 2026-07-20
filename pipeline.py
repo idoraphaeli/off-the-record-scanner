@@ -7,6 +7,8 @@ MAX_DIM = 1600
 # image's shorter side. DISC = outer guide; LABEL = inner guide (of disc radius).
 DISC_RADIUS_RATIO = 0.95
 LABEL_RADIUS_RATIO = 0.40
+POLAR_ANGLE_STEPS = 3600   # angular resolution of the unwrap: one column per 0.1°
+OUTER_TRIM_RATIO = 0.97
 
 
 def load_image(path):
@@ -51,6 +53,22 @@ def find_disc(gray):
 
     return center, inner_radius, outer_radius
 
+def unwrap(gray, center, outer_radius):
+    # warpPolar re-samples the disc by (angle, distance-from-center) instead of
+    # (x, y), so every concentric groove becomes a straight horizontal line.
+    polar = cv2.warpPolar(gray, (outer_radius, POLAR_ANGLE_STEPS),
+                          center, outer_radius, cv2.WARP_POLAR_LINEAR)
+    # Transpose so rows = radius (center at top), cols = angle. This is what
+    # turns grooves horizontal and radial scratches vertical.
+    return cv2.transpose(polar)
+
+def crop_ring(polar, inner_radius):
+    # In the unwrapped image the row index IS the distance from the center in
+    # pixels, so cropping the label and the rim is just slicing rows: keep from
+    # the label edge out to just short of the disc edge.
+    outer_radius = polar.shape[0]
+    return polar[inner_radius:int(outer_radius * OUTER_TRIM_RATIO)]
+
 
 if __name__ == "__main__":
     import sys
@@ -60,8 +78,9 @@ if __name__ == "__main__":
     center, inner_r, outer_r = find_disc(gray)
     print("center:", center, "inner:", inner_r, "outer:", outer_r)
 
-    cv2.circle(img, center, outer_r, (0, 255, 0), 3)     # green: disc edge
-    cv2.circle(img, center, inner_r, (0, 165, 255), 3)   # orange: label edge
-    cv2.drawMarker(img, center, (0, 0, 255), cv2.MARKER_CROSS, 40, 3)
-    cv2.imencode(".jpg", img)[1].tofile("disc_check.jpg")
-    print("saved disc_check.jpg")
+    polar = unwrap(gray, center, outer_r)
+    print("polar shape:", polar.shape, "(rows=radius, cols=angle)")
+    ring = crop_ring(polar, inner_r)
+    print("ring shape:", ring.shape)
+    cv2.imencode(".jpg", ring)[1].tofile("crop_check.jpg")
+    print("saved crop_check.jpg")
