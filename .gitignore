@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+*_analyzed.jpg
+*_stages/
+disc_check.jpg
+
+.DS_Store
+Thumbs.db
