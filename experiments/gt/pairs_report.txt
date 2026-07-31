@@ -1,0 +1,15 @@
+OK: WhatsApp Image 2026-07-31 at 13.02.05 (1).jpeg -> 1 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.05.jpeg -> 3 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.06 (1).jpeg -> 5 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.06 (2).jpeg -> 9 scratch zones (1 unclosed loops)
+BAD PAIR (size mismatch (1536, 2048, 3) vs (1315, 1754, 3)): WhatsApp Image 2026-07-31 at 13.02.06 (3).jpeg
+OK: WhatsApp Image 2026-07-31 at 13.02.06 (4).jpeg -> 4 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.06.jpeg -> 6 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.07 (1).jpeg -> 5 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.07 (2).jpeg -> 3 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.07 (3).jpeg -> 4 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.07 (4).jpeg -> 8 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.07.jpeg -> 2 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.08 (1).jpeg -> 6 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.08 (2).jpeg -> 5 scratch zones
+OK: WhatsApp Image 2026-07-31 at 13.02.08.jpeg -> 2 scratch zones

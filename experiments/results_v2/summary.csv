@@ -1,0 +1,16 @@
+﻿id,set,marks_detected,human_zones,zones_found,detections_outside_zones,source_file
+record_01,calibration,5,1,1,4,WhatsApp Image 2026-07-31 at 13.02.05 (1).jpeg
+record_02,calibration,7,3,3,3,WhatsApp Image 2026-07-31 at 13.02.05.jpeg
+record_03,calibration,9,5,4,1,WhatsApp Image 2026-07-31 at 13.02.06 (1).jpeg
+record_04,calibration,12,9,5,3,WhatsApp Image 2026-07-31 at 13.02.06 (2).jpeg
+record_05,unused,4,0,0,0,WhatsApp Image 2026-07-31 at 13.02.06 (3).jpeg
+record_06,calibration,2,4,2,0,WhatsApp Image 2026-07-31 at 13.02.06 (4).jpeg
+record_07,calibration,4,6,1,0,WhatsApp Image 2026-07-31 at 13.02.06.jpeg
+record_08,calibration,9,5,5,4,WhatsApp Image 2026-07-31 at 13.02.07 (1).jpeg
+record_09,test,3,3,1,2,WhatsApp Image 2026-07-31 at 13.02.07 (2).jpeg
+record_10,test,2,4,0,2,WhatsApp Image 2026-07-31 at 13.02.07 (3).jpeg
+record_11,calibration,9,8,4,5,WhatsApp Image 2026-07-31 at 13.02.07 (4).jpeg
+record_12,calibration,9,2,2,2,WhatsApp Image 2026-07-31 at 13.02.07.jpeg
+record_13,calibration,5,6,3,1,WhatsApp Image 2026-07-31 at 13.02.08 (1).jpeg
+record_14,test,7,5,2,3,WhatsApp Image 2026-07-31 at 13.02.08 (2).jpeg
+record_15,calibration,7,2,2,2,WhatsApp Image 2026-07-31 at 13.02.08.jpeg

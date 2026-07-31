@@ -8,5 +8,14 @@ venv/
 *_stages/
 disc_check.jpg
 
+# Experiment outputs: regenerable from the scripts, too heavy for the repo.
+# results_v2/ is kept (it is the deliverable people actually look at).
+experiments/runs/
+experiments/runs_flash_old/
+experiments/gt_flash_old/
+experiments/debug/
+experiments/review/
+experiments/results/
+
 .DS_Store
 Thumbs.db
