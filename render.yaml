@@ -1,0 +1,21 @@
+# Render blueprint. Point Render at this repo and it builds the server folder.
+services:
+  - type: web
+    name: off-the-record-scanner
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free            # change to "starter" to stop the service sleeping
+    healthCheckPath: /health
+    envVars:
+      # Set these in the Render dashboard, not here -- a token committed to a
+      # public repo is a token that has to be rotated.
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Render's disk is ephemeral: this file is wiped on every deploy and on
+      # every wake from sleep. Fine for trying the flow out; move feedback to a
+      # database before it is worth keeping.
+      - key: FEEDBACK_PATH
+        value: /tmp/feedback.jsonl
