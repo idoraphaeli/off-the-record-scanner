@@ -20,6 +20,7 @@ import uuid
 
 from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from scanner import analyze as run_analysis
@@ -62,6 +63,16 @@ def _require_admin(token):
 @app.get("/health")
 def health():
     return {"status": "ok", "feedback_enabled": bool(ADMIN_TOKEN)}
+
+
+@app.get("/capture")
+def capture_page():
+    """Dataset capture tool: a phone page that enforces the same framing circle
+    and level check as the app, but downloads the photo to the device instead of
+    uploading it. Served from here because a live camera needs HTTPS, which a
+    local file cannot provide."""
+    return FileResponse(os.path.join(os.path.dirname(__file__), "capture.html"),
+                        media_type="text/html")
 
 
 @app.post("/analyze")

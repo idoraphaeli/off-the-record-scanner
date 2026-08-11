@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>צילום תקליטים למאגר</title>
+<style>
+  :root{
+    --bg:#0d0f11; --panel:#171b1f; --line:#2a3238; --text:#e8edf1; --dim:#9aa6ae;
+    --ok:#39d98a; --bad:#ff5a52; --accent:#ff8438;
+    --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ---- setup screen ---- */
+  #setup{padding:1.25rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto;height:100%}
+  h1{font-size:1.15rem;font-weight:650}
+  .hint{color:var(--dim);font-size:.9rem}
+  label{display:block;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.35rem}
+  input,select{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+               border-radius:8px;padding:.7rem .8rem;font-size:1rem;font-family:inherit}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+  button{background:var(--accent);color:#141414;border:0;border-radius:8px;padding:.85rem 1rem;
+         font-size:1rem;font-weight:650;font-family:inherit;width:100%}
+  button:disabled{opacity:.35}
+  button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .row{display:flex;gap:.6rem}
+  .row>*{flex:1}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem}
+  .card h2{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;font-weight:600}
+  ol{padding-inline-start:1.1rem;font-size:.9rem;color:var(--dim)}
+  ol li{margin-bottom:.3rem}
+  .done{font-family:var(--mono);font-size:.8rem;color:var(--dim);white-space:pre-wrap;
+        max-height:9rem;overflow-y:auto;direction:ltr;text-align:left}
+
+  /* ---- capture screen ---- */
+  #cam{display:none;position:relative;height:100%;background:#000}
+  #cam.on{display:block}
+  video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #guide{position:absolute;inset:0;pointer-events:none}
+
+  .bar{position:absolute;left:0;right:0;padding:.7rem 1rem;background:rgba(10,12,14,.82);
+       backdrop-filter:blur(6px);z-index:3}
+  .bar.top{top:0;display:flex;align-items:center;gap:.75rem}
+  .bar.bot{bottom:0;display:flex;flex-direction:column;align-items:center;gap:.6rem;
+           padding-bottom:calc(.9rem + env(safe-area-inset-bottom))}
+  .who{font-weight:650;font-size:.95rem}
+  .who small{display:block;color:var(--dim);font-weight:400;font-size:.78rem}
+  .x{margin-inline-start:auto;background:transparent;border:1px solid var(--line);color:var(--text);
+     width:2.2rem;height:2.2rem;border-radius:50%;font-size:1.1rem;padding:0;flex:0 0 auto}
+
+  .tilt{font-family:var(--mono);font-size:.85rem;color:var(--dim);font-variant-numeric:tabular-nums}
+  .tilt b{color:var(--text)}
+  .warn{font-size:.85rem;color:var(--bad);min-height:1.2em;text-align:center}
+  .warn.ok{color:var(--ok)}
+  .shutter{width:4.6rem;height:4.6rem;border-radius:50%;background:#fff;border:5px solid var(--bad);
+           padding:0;font-size:1.5rem;color:#111}
+  .shutter.ready{border-color:var(--ok)}
+  .shutter:disabled{opacity:.5}
+  @media (prefers-reduced-motion:no-preference){ .shutter{transition:border-color .18s} }
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP ============ -->
+<div id="setup">
+  <h1>צילום תקליטים למאגר</h1>
+  <p class="hint">
+    אותם תנאים בדיוק כמו באפליקציה: התקליט בתוך המסגרת, והטלפון מפולס.
+    הצילומים יורדים למכשיר — שום דבר לא נשלח לשרת.
+  </p>
+
+  <div class="card">
+    <h2>לפני שמתחילים</h2>
+    <ol>
+      <li>תקליט על רקע כהה ואחיד — לא על העטיפה</li>
+      <li>חדר מעומעם, מנורה אחת בזווית נמוכה מהצד</li>
+      <li>נגב אבק — הוא ייראה למודל כמו שריטה</li>
+      <li>אחרי הצילום הראשון: <b>הזז את המנורה</b>, אל תזיז את התקליט</li>
+    </ol>
+  </div>
+
+  <div>
+    <label for="rec">שם התקליט (ישמש כשם התיקייה)</label>
+    <input id="rec" placeholder="bowie-golden-years" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="side">צד</label>
+      <select id="side"><option>A</option><option>B</option></select>
+    </div>
+    <div>
+      <label for="tol">סבילות פילוס</label>
+      <select id="tol">
+        <option value="3">±3° — מחמיר</option>
+        <option value="5" selected>±5° — רגיל</option>
+        <option value="8">±8° — מקל</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="start">פתח מצלמה</button>
+  <p class="hint" id="msg"></p>
+
+  <div class="card" id="log" hidden>
+    <h2>צולם עד כה</h2>
+    <div class="done" id="logtext"></div>
+    <button class="ghost" id="clear" style="margin-top:.7rem">נקה רשימה</button>
+  </div>
+</div>
+
+<!-- ============ CAMERA ============ -->
+<div id="cam">
+  <video id="v" playsinline muted autoplay></video>
+  <canvas id="guide"></canvas>
+
+  <div class="bar top">
+    <div class="who"><span id="label">—</span><small id="sub">—</small></div>
+    <button class="x" id="close" aria-label="סגור">✕</button>
+  </div>
+
+  <div class="bar bot">
+    <div class="tilt">הטיה <b id="tx">–</b>° / <b id="ty">–</b>°</div>
+    <div class="warn" id="warn">מייצב…</div>
+    <button class="shutter" id="shoot" disabled aria-label="צלם">◎</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const setup=$("setup"), cam=$("cam"), video=$("v"), guide=$("guide");
+
+  // Guide circle radius as a fraction of the SHORT side of the frame. This is the
+  // framing contract: the analyser assumes the disc fills the guide, so this must
+  // stay in step with the app's own guide.
+  const GUIDE_R = 0.46;
+  const HOLD_MS = 350;          // level must hold this long before the shutter arms
+  const SMOOTH  = 0.25;         // low-pass on the tilt reading, or it jitters
+
+  let stream=null, tol=5, beta=null, gamma=null, sBeta=0, sGamma=0;
+  let levelSince=0, armed=false, haveSensor=false, shots=[];
+
+  /* ---------- shot log ---------- */
+  const loadLog = () => { try{ shots = JSON.parse(localStorage.getItem("shots")||"[]"); }catch{ shots=[]; } };
+  const saveLog = () => localStorage.setItem("shots", JSON.stringify(shots));
+  function renderLog(){
+    $("log").hidden = shots.length===0;
+    $("logtext").textContent = shots.map(s=>s).join("\n");
+  }
+
+  /* ---------- tilt ---------- */
+  function onOrient(e){
+    if (e.beta===null && e.gamma===null) return;
+    haveSensor = true;
+    beta = e.beta ?? 0; gamma = e.gamma ?? 0;
+    sBeta  += (beta  - sBeta)  * SMOOTH;
+    sGamma += (gamma - sGamma) * SMOOTH;
+  }
+  const isLevel = () => haveSensor ? (Math.abs(sBeta)<=tol && Math.abs(sGamma)<=tol) : true;
+
+  async function askSensor(){
+    const D = window.DeviceOrientationEvent;
+    if (D && typeof D.requestPermission === "function") {      // iOS 13+
+      try { if (await D.requestPermission() !== "granted") return false; }
+      catch { return false; }
+    }
+    window.addEventListener("deviceorientation", onOrient, true);
+    return true;
+  }
+
+  /* ---------- guide + level loop ---------- */
+  function draw(){
+    const w = guide.clientWidth, h = guide.clientHeight;
+    if (guide.width !== w || guide.height !== h){ guide.width=w; guide.height=h; }
+    const ctx = guide.getContext("2d");
+    ctx.clearRect(0,0,w,h);
+
+    const level = isLevel();
+    const now = performance.now();
+    if (!level) levelSince = 0;
+    else if (!levelSince) levelSince = now;
+    armed = level && levelSince && (now - levelSince > HOLD_MS);
+
+    const r = Math.min(w,h) * GUIDE_R;
+    ctx.save();
+    ctx.setLineDash([10,8]);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = armed ? "#39d98a" : "#ff5a52";
+    ctx.beginPath(); ctx.arc(w/2, h/2, r, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    $("tx").textContent = haveSensor ? sGamma.toFixed(0) : "–";
+    $("ty").textContent = haveSensor ? sBeta.toFixed(0)  : "–";
+    const warn = $("warn");
+    if (!haveSensor){
+      warn.textContent = "אין חיישן פילוס — צלם בזהירות, ישר מלמעלה";
+      warn.className = "warn";
+    } else if (!armed){
+      warn.textContent = "החזק את הטלפון שטוח מעל התקליט";
+      warn.className = "warn";
+    } else {
+      warn.textContent = "מפולס — אפשר לצלם";
+      warn.className = "warn ok";
+    }
+    const shoot = $("shoot");
+    shoot.disabled = !armed;
+    shoot.classList.toggle("ready", armed);
+
+    requestAnimationFrame(draw);
+  }
+
+  /* ---------- camera ---------- */
+  async function open(){
+    const rec = $("rec").value.trim();
+    if (!rec){ $("msg").textContent = "צריך שם לתקליט."; $("rec").focus(); return; }
+    tol = Number($("tol").value);
+
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ideal:"environment"},
+                width:{ideal:4096}, height:{ideal:4096} },
+        audio:false });
+    }catch(err){
+      $("msg").textContent = "לא ניתן לפתוח מצלמה: " + err.message +
+        " — צריך HTTPS ואישור גישה למצלמה.";
+      return;
+    }
+    video.srcObject = stream;
+    await askSensor();
+
+    const side = $("side").value;
+    const n = shots.filter(s => s.startsWith(rec + "_side" + side)).length + 1;
+    $("label").textContent = rec;
+    $("sub").textContent = "צד " + side + " · צילום " + n + " מתוך 2";
+
+    setup.style.display = "none";
+    cam.classList.add("on");
+    requestAnimationFrame(draw);
+  }
+
+  function close(){
+    if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    cam.classList.remove("on");
+    setup.style.display = "";
+    renderLog();
+  }
+
+  /* ---------- capture ---------- */
+  function shoot(){
+    if (!armed) return;
+    const rec  = $("rec").value.trim();
+    const side = $("side").value;
+    const n    = shots.filter(s => s.startsWith(rec + "_side" + side)).length + 1;
+
+    const c = document.createElement("canvas");
+    c.width  = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext("2d").drawImage(video, 0, 0);
+
+    // tilt is recorded in the name so a photo's capture conditions travel with it
+    const tag = haveSensor ? `_tilt${Math.abs(sGamma).toFixed(0)}-${Math.abs(sBeta).toFixed(0)}`
+                           : "_tiltNA";
+    const name = `${rec}_side${side}_shot${n}${tag}.jpg`;
+
+    c.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+
+      shots.push(name); saveLog();
+      const next = shots.filter(s => s.startsWith(rec + "_side" + side)).length + 1;
+      $("sub").textContent = next > 2
+        ? "צד " + side + " · הושלם — הזז את המנורה או החלף צד"
+        : "צד " + side + " · צילום " + next + " מתוך 2";
+    }, "image/jpeg", 0.95);
+  }
+
+  $("start").addEventListener("click", open);
+  $("close").addEventListener("click", close);
+  $("shoot").addEventListener("click", shoot);
+  $("clear").addEventListener("click", () => { shots=[]; saveLog(); renderLog(); });
+  loadLog(); renderLog();
+})();
+</script>
+</body>
+</html>

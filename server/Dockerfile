@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY scanner ./scanner
-COPY app.py .
+COPY app.py capture.html ./
 
 # Render (and most hosts) inject the port to listen on; default for local runs.
 ENV PORT=8000
