@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0d0f11; --panel:#171b1f; --line:#2a3238; --text:#e8edf1; --dim:#9aa6ae;
-    --ok:#39d98a; --bad:#ff5a52; --accent:#ff8438;
+    --ok:#39d98a; --bad:#ff5a52; --unk:#e0a33a; --accent:#ff8438;
     --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -39,7 +39,10 @@
   #cam{display:none;position:relative;height:100%;background:#000}
   #cam.on{display:block}
   video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  #guide{position:absolute;inset:0;pointer-events:none}
+  /* a canvas is a replaced element: without an explicit CSS width/height it keeps
+     its intrinsic 300x150 and inset:0 does NOT stretch it, so the guide was drawn
+     inside a small box in the corner instead of across the screen */
+  #guide{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 
   .bar{position:absolute;left:0;right:0;padding:.7rem 1rem;background:rgba(10,12,14,.82);
        backdrop-filter:blur(6px);z-index:3}
@@ -55,9 +58,13 @@
   .tilt b{color:var(--text)}
   .warn{font-size:.85rem;color:var(--bad);min-height:1.2em;text-align:center}
   .warn.ok{color:var(--ok)}
+  .warn.unk{color:var(--unk)}
   .shutter{width:4.6rem;height:4.6rem;border-radius:50%;background:#fff;border:5px solid var(--bad);
            padding:0;font-size:1.5rem;color:#111}
   .shutter.ready{border-color:var(--ok)}
+  /* amber, not green: capture is allowed but levelness was never verified, and a
+     green ring would claim something the page cannot actually know */
+  .shutter.unverified{border-color:var(--unk)}
   .shutter:disabled{opacity:.5}
   @media (prefers-reduced-motion:no-preference){ .shutter{transition:border-color .18s} }
 </style>
@@ -141,9 +148,11 @@
   const GUIDE_R = 0.46;
   const HOLD_MS = 350;          // level must hold this long before the shutter arms
   const SMOOTH  = 0.25;         // low-pass on the tilt reading, or it jitters
+  const SENSOR_GRACE_MS = 1500; // wait before declaring "no sensor" -- the first
+                                // orientation event takes a moment to arrive
 
   let stream=null, tol=5, beta=null, gamma=null, sBeta=0, sGamma=0;
-  let levelSince=0, armed=false, haveSensor=false, shots=[];
+  let levelSince=0, armed=false, haveSensor=false, shots=[], camOpenedAt=0;
 
   /* ---------- shot log ---------- */
   const loadLog = () => { try{ shots = JSON.parse(localStorage.getItem("shots")||"[]"); }catch{ shots=[]; } };
@@ -161,7 +170,8 @@
     sBeta  += (beta  - sBeta)  * SMOOTH;
     sGamma += (gamma - sGamma) * SMOOTH;
   }
-  const isLevel = () => haveSensor ? (Math.abs(sBeta)<=tol && Math.abs(sGamma)<=tol) : true;
+  // only meaningful once haveSensor is true; draw() handles the no-sensor case
+  const isLevel = () => Math.abs(sBeta) <= tol && Math.abs(sGamma) <= tol;
 
   async function askSensor(){
     const D = window.DeviceOrientationEvent;
@@ -180,36 +190,45 @@
     const ctx = guide.getContext("2d");
     ctx.clearRect(0,0,w,h);
 
-    const level = isLevel();
     const now = performance.now();
-    if (!level) levelSince = 0;
-    else if (!levelSince) levelSince = now;
-    armed = level && levelSince && (now - levelSince > HOLD_MS);
+    // three states, not two: "waiting" and "no sensor" must not look like "level"
+    let state;
+    if (!haveSensor){
+      state = (now - camOpenedAt < SENSOR_GRACE_MS) ? "waiting" : "unknown";
+    } else if (!isLevel()){
+      state = "bad";
+    } else {
+      if (!levelSince) levelSince = now;
+      state = (now - levelSince > HOLD_MS) ? "ok" : "waiting";
+    }
+    if (state === "bad") levelSince = 0;
+    armed = (state === "ok" || state === "unknown");
 
+    const COLOUR = { ok:"#39d98a", bad:"#ff5a52", unknown:"#e0a33a", waiting:"#e0a33a" };
     const r = Math.min(w,h) * GUIDE_R;
     ctx.save();
     ctx.setLineDash([10,8]);
     ctx.lineWidth = 3;
-    ctx.strokeStyle = armed ? "#39d98a" : "#ff5a52";
+    ctx.strokeStyle = COLOUR[state];
     ctx.beginPath(); ctx.arc(w/2, h/2, r, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
 
     $("tx").textContent = haveSensor ? sGamma.toFixed(0) : "–";
     $("ty").textContent = haveSensor ? sBeta.toFixed(0)  : "–";
+
+    const TEXT = {
+      ok:      ["מפולס — אפשר לצלם", "warn ok"],
+      bad:     ["החזק את הטלפון שטוח מעל התקליט", "warn"],
+      waiting: ["מייצב…", "warn unk"],
+      unknown: ["פילוס לא אומת — צלם ישר מלמעלה", "warn unk"],
+    };
     const warn = $("warn");
-    if (!haveSensor){
-      warn.textContent = "אין חיישן פילוס — צלם בזהירות, ישר מלמעלה";
-      warn.className = "warn";
-    } else if (!armed){
-      warn.textContent = "החזק את הטלפון שטוח מעל התקליט";
-      warn.className = "warn";
-    } else {
-      warn.textContent = "מפולס — אפשר לצלם";
-      warn.className = "warn ok";
-    }
+    [warn.textContent, warn.className] = TEXT[state];
+
     const shoot = $("shoot");
     shoot.disabled = !armed;
-    shoot.classList.toggle("ready", armed);
+    shoot.classList.toggle("ready", state === "ok");
+    shoot.classList.toggle("unverified", state === "unknown");
 
     requestAnimationFrame(draw);
   }
@@ -219,6 +238,12 @@
     const rec = $("rec").value.trim();
     if (!rec){ $("msg").textContent = "צריך שם לתקליט."; $("rec").focus(); return; }
     tol = Number($("tol").value);
+
+    // Sensors FIRST, and before any other await. iOS only grants motion access to
+    // a request that starts inside the user's tap; awaiting the camera first ends
+    // that window, and the request is then refused silently -- which is why the
+    // level indicator read "no sensor" on iPhone.
+    await askSensor();
 
     try{
       stream = await navigator.mediaDevices.getUserMedia({
@@ -231,7 +256,7 @@
       return;
     }
     video.srcObject = stream;
-    await askSensor();
+    camOpenedAt = performance.now();
 
     const side = $("side").value;
     const n = shots.filter(s => s.startsWith(rec + "_side" + side)).length + 1;
