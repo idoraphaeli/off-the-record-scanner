@@ -10,6 +10,25 @@ note the change in CHANGELOG.
 
 Every constant in P was set by measurement, not by taste; the comments record
 what each one was measured against.
+
+Promoted 2026-08-27 from experiments/detector.py. Measured over 53 records split
+BY RECORD into calibration (30), validation (11) and a test set (12) that was
+opened only once, at the end:
+
+               recall   precision
+  calibration   60.7%      75.9%
+  validation    65.2%      78.1%
+  test          56.9%      77.2%
+
+Precision counts dirt as a correct call, because a dirty record genuinely is in
+worse condition. It was measured by hand-labelling all 2757 detections.
+
+One consequence to be aware of: this build reports roughly three times as many
+marks per photo as the one it replaces, and analyze._grade sums length x
+thickness over them. The GRADE_BANDS there were never fitted to human-graded
+records, and they now sit against a much larger damage index -- so every record
+will grade lower than before. The bands need refitting before the grade is
+shown to anyone as a number.
 """
 
 import cv2
@@ -17,8 +36,15 @@ import numpy as np
 
 P = dict(
     MAX_DIM=1600,
-    LABEL_R=0.40,        # inner mask: fraction of disc radius (label + run-out)
-    OUTER_R=0.93,        # outer mask: fraction of disc radius (rim + lead-in)
+    # Analysed band, as fractions of the disc radius. 0.40/0.93 was cropping away
+    # scratches nobody had ever looked at: 15% of all misses lay outside it.
+    # Widening inward is free -- there is no hard edge towards the centre. Going
+    # outward is not: measured, 0.95 bought 2.7 points of recall for 0.2 extra
+    # false detections per clean photo, while the further step to 0.97 bought 0.6
+    # points for 0.4 -- the rim itself is a bright line, and find_disc is only
+    # approximate, so past 0.95 the cut starts reading the edge as damage.
+    LABEL_R=0.36,        # inner mask: fraction of disc radius (label + run-out)
+    OUTER_R=0.95,        # outer mask: fraction of disc radius (rim + lead-in)
     POLAR_STEPS=3600,
     ROW_FLATTEN=151,     # background flattening window along each groove row
     TOPHAT_W=15,         # ridge width limit: wider-than-this bright = not a scratch
@@ -37,14 +63,25 @@ P = dict(
     TRAM_WEIGHT=1.0,
     TRAM_MIN_LEN=80,     # a groove-parallel mark must be long to outrank a groove
     # Hysteresis thresholds as PERCENTILES of each image's own judgeable-area
-    # response, not fixed levels: the noise floor moves image to image, so a
-    # constant either floods or starves.
-    PCT_STRONG=99.8,
-    PCT_WEAK=99.5,
+    # response, not fixed levels: the noise floor moves image to image (measured
+    # p99.9 spans 18-29 across the set), so a constant either floods or starves.
+    #
+    # Eased from 99.8/99.5 after a miss diagnosis found that 80% of missed
+    # scratches produced a response that was measured and then discarded, while
+    # only 2 of 527 left no trace at all. Chosen from a nine-point sweep on the
+    # CALIBRATION records alone: 49.0% -> 62.5% recall.
+    #
+    # These and THR_FLOOR are gates in SERIES: opening either alone gained 3-10
+    # points, opening both gained 21, which is why every earlier attempt to move
+    # just one of them went nowhere.
+    PCT_STRONG=99.3,
+    PCT_WEAK=98.7,
     # Absolute floor on the normalised map (units: 10x local sigma). This is what
     # keeps a CLEAN record clean -- percentiles alone would always "find" the top
-    # 0.1% of pure noise.
-    THR_FLOOR=35,
+    # 0.1% of pure noise. On calibration this is the heavier of the two gates:
+    # dropping it 35 -> 25 was worth 5.0 points, while moving the percentiles
+    # across the same span was worth 3.3.
+    THR_FLOOR=25,
     GLARE_BRIGHT=200,
     GLARE_MARGIN=11,
     LIT_MIN=14,          # ring areas dimmer than this (local mean) are unjudgeable
@@ -63,10 +100,36 @@ P = dict(
     # genuine tramlines survive. Cut false positives 55% at no cost to recall.
     GROOVE_TOL_DEG=12,
     GROOVE_KEEP_LEN=250,
-    # Shape limits measured from components overlapping human-marked zones: real
-    # scratches ran length 6-119 (median 39), thickness 2-11, elongation 2.7-24.
-    MIN_LEN=30,
-    MAX_THICK=12,
+    # The opposite rejection, and the one that pays: a mark aimed almost exactly
+    # at the centre of the disc, and long. That is not damage, it is the beam a
+    # lamp throws off thousands of concentric grooves -- the streak of light you
+    # see by eye when a record is tilted towards a bulb. Measured over 1527
+    # hand-labelled detections: half of all reflections point within 10 degrees of
+    # dead radial, against one scratch in nine, and NO marked scratch in the set
+    # is both radial and long.
+    #
+    # Both conditions are required. The angle alone removes short radial
+    # scratches too and costs 6 points of recall; adding the length spares them
+    # and the rule becomes free. 83/45 is the tightest pair that deletes not one
+    # marked scratch on either the calibration or the validation records, and it
+    # removes a third of all false detections: precision 69->77 on calibration,
+    # 73->80 on validation, with recall unmoved.
+    RADIAL_TOL_DEG=83,
+    RADIAL_MIN_LEN=45,
+    # Shape limits. A miss diagnosis attributed 15.6% of all missed hand-marked
+    # scratches to MIN_LEN alone, and those misses clustered at length 15-28
+    # against a bar of 30 that had no measurement behind it.
+    #
+    # Dropping the bar for everyone also admits every short stubby speck, so the
+    # rule is graded instead: below SHORT_LEN a component must clear the much
+    # stricter SHORT_ELONG. A short real scratch is a thin sharp line; a short
+    # piece of dirt is a blob. Measured on the calibration set, the graded form
+    # found the same scratches as a flat MIN_LEN=15 while reporting 160 fewer
+    # detections.
+    MIN_LEN=15,
+    SHORT_LEN=30,
+    SHORT_ELONG=6.0,
+    MAX_THICK=16,
     MIN_ELONG=2.5,
 )
 
@@ -284,15 +347,26 @@ def extract(smap, min_len=None):
         thickness = area / max(length, 1)
         if length < min_len or thickness > P["MAX_THICK"]:
             continue
-        if length / max(thickness, 1) < P["MIN_ELONG"]:
+        # Short components are held to a stricter elongation than long ones: a
+        # short real scratch is a thin sharp line, a short piece of dirt is a
+        # blob, and one flat threshold cannot ask that of both.
+        need = P["SHORT_ELONG"] if length < P["SHORT_LEN"] else P["MIN_ELONG"]
+        if length / max(thickness, 1) < need:
             continue
-        angle = _axis_angle_deg(comp)
+        angle = _axis_angle_deg(comp)      # 0 = along the grooves, 90 = across
         if angle < P["GROOVE_TOL_DEG"] and length < P["GROOVE_KEEP_LEN"]:
-            continue
+            continue                        # groove highlight, not damage
+        if angle > P["RADIAL_TOL_DEG"] and length > P["RADIAL_MIN_LEN"]:
+            continue                        # the lamp's beam off the grooves
         mask[labels == i] = 255
         marks.append({"length_px": int(length),
                       "thickness_px": round(float(thickness), 1),
                       "angle_to_groove_deg": round(angle, 1),
+                      # rows of the unwrapped ring ARE the radius, so the
+                      # component's height is how far across the record it
+                      # reaches -- i.e. how many grooves, and so how many
+                      # tracks, it crosses. Used to weight the grade.
+                      "radial_span_px": int(h),
                       "polar_row": int(y + h / 2), "polar_col": int(x + w / 2)})
     return mask, marks
 

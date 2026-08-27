@@ -2,8 +2,14 @@
 """
 Off The Record -- scratch analysis API.
 
-    POST /analyze    an image -> detected marks, coverage, suggested grade,
-                     and an overlay image with the marks highlighted
+    POST /analyze-record
+                     four photographs, two of each side -> all four marked, a
+                     grade per side, and a grade for the record. This is the
+                     endpoint the app uses.
+    POST /analyze    one side on its own: an image -> detected marks, coverage,
+                     suggested grade, and the image with the marks highlighted.
+                     Send an optional second shot of the same side and each mark
+                     is also checked against it.
     POST /feedback   an admin's verdict on one detection (was it a real scratch?)
     GET  /feedback   list what has been collected so far (admin)
     GET  /health     readiness probe
@@ -24,6 +30,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from scanner import analyze as run_analysis
+from scanner import analyze_record as run_record_analysis
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 # JPEG, PNG, WEBP, BMP. Checked from the bytes themselves -- a file extension or
@@ -75,21 +82,82 @@ def capture_page():
                         media_type="text/html")
 
 
+def _check_upload(data, what):
+    if not data:
+        raise HTTPException(400, f"empty upload: {what}")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            413, f"{what} is larger than {MAX_UPLOAD_BYTES // 1024 // 1024} MB")
+    if _sniff(data) is None:
+        raise HTTPException(
+            415, f"unsupported file type for {what}; send a JPEG, PNG, WEBP or BMP")
+
+
 @app.post("/analyze")
 async def analyze_endpoint(
     image: UploadFile = File(...),
+    second_image: UploadFile = File(
+        None, description="another shot of the SAME side, lamp moved"),
     overlay: bool = Query(True, description="include the highlighted image"),
 ):
+    """Grade one side of a record.
+
+    Sending a second shot of the same side — same disc, lamp moved between the
+    two — lets every mark be checked against it. Marks that show up in both are
+    far more likely to be real damage rather than a reflection, and they weigh
+    more in the grade accordingly. The two photos do not need to be lined up by
+    the caller; the rotation is worked out from the centre label.
+    """
     data = await image.read()
-    if not data:
-        raise HTTPException(400, "empty upload")
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, f"image larger than {MAX_UPLOAD_BYTES // 1024 // 1024} MB")
-    if _sniff(data) is None:
-        raise HTTPException(415, "unsupported file type; send a JPEG, PNG, WEBP or BMP")
+    _check_upload(data, "image")
+
+    second = None
+    if second_image is not None:
+        second = await second_image.read()
+        if second:
+            _check_upload(second, "second_image")
+        else:
+            second = None
 
     try:
-        result = run_analysis(data, want_overlay=overlay)
+        result = run_analysis(data, want_overlay=overlay, second_image_bytes=second)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    result["analysis_id"] = uuid.uuid4().hex
+    return result
+
+
+@app.post("/analyze-record")
+async def analyze_record_endpoint(
+    side_a_1: UploadFile = File(..., description="side A, first tilt"),
+    side_a_2: UploadFile = File(..., description="side A, second tilt"),
+    side_b_1: UploadFile = File(..., description="side B, first tilt"),
+    side_b_2: UploadFile = File(..., description="side B, second tilt"),
+    overlay: bool = Query(True, description="include the marked photographs"),
+):
+    """Grade a whole record from four photographs — two of each side.
+
+    The two shots of a side must be of the SAME side with the disc tilted
+    differently between them, so the lamp rakes across the surface from a
+    different angle. They do not need to be lined up by the caller: the rotation
+    between them is read off the centre label. Each photograph must show the
+    WHOLE disc, label included, or the disc cannot be located.
+
+    Every photograph comes back marked. The record's grade is the worse of its
+    two sides, never their average — a buyer plays both.
+    """
+    files = {"A": [side_a_1, side_a_2], "B": [side_b_1, side_b_2]}
+    sides = {}
+    for name, uploads in files.items():
+        shots = []
+        for i, up in enumerate(uploads, 1):
+            data = await up.read()
+            _check_upload(data, f"side {name} photo {i}")
+            shots.append(data)
+        sides[name] = shots
+
+    try:
+        result = run_record_analysis(sides, want_overlay=overlay)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     result["analysis_id"] = uuid.uuid4().hex

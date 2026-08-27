@@ -178,3 +178,54 @@ tools that did the real work: `feature_probe.py` (is there signal at all?),
 `filter_audit.py` (which filter kills true positives?), `zone_response.py`
 (per-zone signal vs threshold), `review_overlay.py` (detections + zones for
 human adjudication).
+
+---
+
+# Promotion to the server — 2026-08-27
+
+`server/scanner/detector.py` had been running the old parameters since it was
+first written. The changes measured on the new dataset were ported into it by
+hand, not copied over the file: the two keep different function signatures
+(`find_disc` also returns how it found the disc, `scratch_map` also returns the
+unjudgeable mask), so a straight copy would have broken `analyze.py`.
+
+Verified after porting by running both copies over the same photographs and
+comparing the masks pixel for pixel — identical on every one, and all 34 shared
+parameters hold the same value.
+
+## What moved
+
+| | was | now | why |
+|---|---|---|---|
+| `LABEL_R` / `OUTER_R` | 0.40 / 0.93 | 0.36 / 0.95 | 15% of all misses lay outside the analysed band |
+| `PCT_STRONG` / `PCT_WEAK` | 99.8 / 99.5 | 99.3 / 98.7 | 80% of missed scratches produced a response that was then discarded |
+| `THR_FLOOR` | 35 | 25 | the heavier of the two gates: worth 5.0 points on its own |
+| `MIN_LEN` | 30 | 15 + graded rule | 15.6% of misses were killed by this bar alone |
+| `MAX_THICK` | 12 | 16 | |
+| `RADIAL_TOL_DEG` / `RADIAL_MIN_LEN` | — | 83 / 45 | new: rejects the lamp's beam off the grooves |
+
+## Where it stands
+
+Measured over 53 records split BY RECORD. The test set was opened once, at the
+end, after every parameter was fixed.
+
+| | recall | precision |
+|---|---|---|
+| calibration (30 records) | 60.7% | 75.9% |
+| validation (11 records) | 65.2% | 78.1% |
+| test (12 records) | 56.9% | 77.2% |
+
+Precision counts dirt as a correct call and was measured by hand-labelling all
+2757 detections across the three sets.
+
+## The one thing this breaks
+
+The new build reports about three times as many marks per photo, and
+`analyze._grade` sums length × thickness over them. `GRADE_BANDS` was never
+fitted to human-graded records, and it now sits against a much larger damage
+index. Measured over ten photographs, grades fall one to two bands — one record
+moved from Near Mint to Very Good on the same photograph.
+
+**The bands need refitting against records graded by a person before the grade
+is shown to anyone as a number.** The detections themselves are better; the
+grade derived from them is now further off than it was.
