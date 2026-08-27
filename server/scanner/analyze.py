@@ -17,6 +17,7 @@ averaged.
 """
 
 import base64
+import ctypes
 import gc
 import time
 
@@ -29,6 +30,25 @@ from .detector import P
 MARK_ALPHA = 0.45     # translucent, so the scratch stays readable under the mark
 MARK_HALO = 9
 LOW_COVERAGE = 55.0   # % below which the photo has not really been assessed
+
+
+def _release_memory():
+    """Hand freed memory back to the operating system, not just to Python.
+
+    Python frees a large array to its allocator, and glibc keeps the pages in
+    case they are wanted again. On a desktop that is a sensible trade. In a
+    512 MB container it is fatal: measured, one analysis request succeeded and
+    the next was killed mid-flight, because the first request's arrays were
+    still counted against the limit even though nothing referenced them.
+
+    malloc_trim asks glibc to return what it is sitting on. It exists only
+    there, so anywhere else this is a no-op and the caller carries on.
+    """
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass          # not glibc (Windows, macOS, musl) — nothing to trim
 
 # ---------------------------------------------------------------------------
 # How much each mark counts towards the grade.
@@ -240,7 +260,7 @@ def _detect(image_bytes, index, want_overlay):
     profile = crossshot.label_profile(gray, center, radius)
 
     del img, gray, ring, dead, mask_r, mask_t
-    gc.collect()
+    _release_memory()
     return {"marks": marks, "report": report, "profile": profile}
 
 
@@ -367,7 +387,7 @@ def analyze_record(sides, want_overlay=True):
             shots.append(_detect(data, i, want_overlay))
         graded[name] = _grade_side(shots, want_overlay, side_name=name)
         del shots
-        gc.collect()
+        _release_memory()
 
     if not graded:
         raise ValueError("no photographs were supplied")
