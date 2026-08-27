@@ -17,6 +17,7 @@ averaged.
 """
 
 import base64
+import gc
 import time
 
 import cv2
@@ -124,11 +125,10 @@ def _paint(img, det_mask):
     return (vis * (1 - a) + np.array([90, 255, 255], np.float32) * a).astype(np.uint8)
 
 
-def _overlay(shot):
+def _overlay(img, ring_mask, inner_px, center, radius, shape):
     """The photograph with every mark the model found painted onto it."""
-    det = detector.rewrap(shot["ring_mask"], shot["inner_px"], shot["center"],
-                          shot["radius"], shot["gray"].shape)
-    ok, buf = cv2.imencode(".jpg", _paint(shot["img"], det),
+    det = detector.rewrap(ring_mask, inner_px, center, radius, shape)
+    ok, buf = cv2.imencode(".jpg", _paint(img, det),
                            [int(cv2.IMWRITE_JPEG_QUALITY), 85])
     if not ok:
         return None
@@ -171,8 +171,17 @@ def _score_of(marks):
     return _band(score), round(score), round(index, 2), round(1000.0 * raw, 2)
 
 
-def _detect(image_bytes):
-    """Everything one photograph yields, before any grading."""
+def _detect(image_bytes, index, want_overlay):
+    """One photograph, reduced to the small things the rest of the code needs.
+
+    Everything heavy — the decoded image, the unwrapped ring, the response maps,
+    the component labels — is finished with and released before this returns.
+    That matters: a whole record is four photographs, and holding all four sets
+    of intermediates at once exhausted the 512 MB the service runs in, which
+    killed the process mid-request and returned a 502. Nothing outside this
+    function ever sees a numpy array now, so peak memory is one photograph
+    rather than four.
+    """
     img = detector.decode_image(image_bytes)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     center, radius, how = detector.find_disc(img)
@@ -186,6 +195,7 @@ def _detect(image_bytes):
     mask_r, marks_r = detector.extract(radial)
     mask_t, marks_t = detector.extract(tram, min_len=P["TRAM_MIN_LEN"])
     marks = marks_r + marks_t
+    del radial, tram
 
     for m in marks:
         # position on the RECORD, not in the photo, so it stays meaningful
@@ -198,40 +208,40 @@ def _detect(image_bytes):
         m["radial_span_frac"] = round(m.pop("radial_span_px") / max(ring_h, 1), 3)
         m["area_frac"] = (m["length_px"] * max(m["thickness_px"], 1.0)) / max(ring_area, 1)
 
-    return {"img": img, "gray": gray, "center": center, "radius": radius,
-            "how": how, "inner_px": inner_px, "ring": ring, "dead": dead,
-            "marks": marks, "ring_mask": cv2.bitwise_or(mask_r, mask_t)}
-
-
-def _photo_report(shot, index, want_overlay):
-    ring = shot["ring"]
-    judged = 100.0 * float((~shot["dead"]).mean())
+    judged = 100.0 * float((~dead).mean())
     warnings = []
     if judged < LOW_COVERAGE:
         warnings.append(
             f"only {judged:.0f}% of the playing surface could be assessed in "
             f"photo {index}; most of it was too dark or too blown-out. Re-shoot "
             "with one lamp at a low angle in a dim room.")
-    if shot["how"] == "fallback_centered":
+    if how == "fallback_centered":
         warnings.append(f"the record outline was not found in photo {index}; "
                         "results are unreliable. Shoot the disc alone, whole and "
                         "square-on, on a plain dark surface.")
+
     report = {
         "photo": index,
-        "mark_count": len(shot["marks"]),
+        "mark_count": len(marks),
         "coverage": {
             "judged_pct": round(judged, 1),
-            "unlit_pct": round(100.0 * float(
-                (detector.unlit_mask(ring) > 0).mean()), 1),
-            "glare_pct": round(100.0 * float(
-                (detector.glare_mask(ring) > 0).mean()), 1)},
-        "disc": {"center_x": shot["center"][0], "center_y": shot["center"][1],
-                 "radius_px": shot["radius"], "found_by": shot["how"]},
+            "unlit_pct": round(100.0 * float((detector.unlit_mask(ring) > 0).mean()), 1),
+            "glare_pct": round(100.0 * float((detector.glare_mask(ring) > 0).mean()), 1)},
+        "disc": {"center_x": center[0], "center_y": center[1],
+                 "radius_px": radius, "found_by": how},
         "warnings": warnings,
     }
     if want_overlay:
-        report["overlay_png"] = _overlay(shot)
-    return report
+        report["overlay_png"] = _overlay(img, cv2.bitwise_or(mask_r, mask_t),
+                                         inner_px, center, radius, gray.shape)
+
+    # the label strip is the one array that has to outlive this call, and it is
+    # a few hundred kilobytes rather than tens of megabytes
+    profile = crossshot.label_profile(gray, center, radius)
+
+    del img, gray, ring, dead, mask_r, mask_t
+    gc.collect()
+    return {"marks": marks, "report": report, "profile": profile}
 
 
 def _grade_side(shots, want_overlay=True, side_name=None):
@@ -250,9 +260,7 @@ def _grade_side(shots, want_overlay=True, side_name=None):
             m["photo"] = 1
         marks = list(a["marks"])
     else:
-        delta, ratio = crossshot.rotation_from_label(
-            crossshot.label_profile(a["gray"], a["center"], a["radius"]),
-            crossshot.label_profile(b["gray"], b["center"], b["radius"]))
+        delta, ratio = crossshot.rotation_from_label(a["profile"], b["profile"])
         if delta is None:
             # A label with no print cannot say how the disc turned between the
             # two shots. Without that, a mark in one photo cannot be matched to
@@ -302,7 +310,7 @@ def _grade_side(shots, want_overlay=True, side_name=None):
         m["area_frac"] = round(m["area_frac"], 6)
 
     grade, score, index, raw_index = _score_of(marks)
-    photos = [_photo_report(s, i + 1, want_overlay) for i, s in enumerate(shots)]
+    photos = [s["report"] for s in shots]
     for p in photos:
         warnings.extend(p["warnings"])
 
@@ -327,9 +335,9 @@ def _grade_side(shots, want_overlay=True, side_name=None):
 def analyze(image_bytes, want_overlay=True, second_image_bytes=None):
     """One side of a record, from one photograph or two."""
     started = time.time()
-    shots = [_detect(image_bytes)]
+    shots = [_detect(image_bytes, 1, want_overlay)]
     if second_image_bytes:
-        shots.append(_detect(second_image_bytes))
+        shots.append(_detect(second_image_bytes, 2, want_overlay))
     result = _grade_side(shots, want_overlay)
     # the first photo's overlay is also offered at the top level, so a caller
     # that only ever sends one image does not have to walk the photos list
@@ -351,8 +359,15 @@ def analyze_record(sides, want_overlay=True):
     for name, images in sides.items():
         if not images:
             continue
-        graded[name] = _grade_side([_detect(b) for b in images],
-                                   want_overlay, side_name=name)
+        # one photograph at a time, and the side is reduced to its result before
+        # the next side starts. Four photographs' worth of intermediates held at
+        # once does not fit in the memory this service runs in.
+        shots = []
+        for i, data in enumerate(images, 1):
+            shots.append(_detect(data, i, want_overlay))
+        graded[name] = _grade_side(shots, want_overlay, side_name=name)
+        del shots
+        gc.collect()
 
     if not graded:
         raise ValueError("no photographs were supplied")
