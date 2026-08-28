@@ -29,6 +29,7 @@ Model_False_Painted/
 Model_Labels/
 Model_Overlay/
 Model_Scratch_Painted/
+Model_OnMark_Check/
 
 # Experiment outputs: regenerable from the scripts, too heavy for the repo.
 # results_v2/ is kept (it is the deliverable people actually look at).

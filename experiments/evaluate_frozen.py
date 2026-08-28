@@ -52,8 +52,8 @@ def detect(path):
     inner, outer = int(P["LABEL_R"] * radius), int(P["OUTER_R"] * radius)
     ring = detector.unwrap(gray, center, radius)[inner:outer]
     radial, tram = detector.scratch_map(ring)
-    m1, _ = detector.extract(radial)
-    m2, _ = detector.extract(tram, min_len=P["TRAM_MIN_LEN"])
+    m1, _ = detector.extract(radial, None, ring, inner, radius)
+    m2, _ = detector.extract(tram, P["TRAM_MIN_LEN"], ring, inner, radius)
     det = detector.rewrap(cv2.bitwise_or(m1, m2), inner, center, radius, gray.shape)
     return img, det
 

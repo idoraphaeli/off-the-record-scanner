@@ -40,6 +40,12 @@ VIEW_W = 1100
 WIN = 45
 RAD_TOL, ANG_IN, ANG_OUT = 0.025, 12.0, 2.0
 INNER, OUTER = 0.36, 0.95
+# How far a detection may sit from the ink and still be called a scratch. This is
+# NOT the evaluator's 30px: that number is about whether a scratch was noticed,
+# this one is about what a detection is, and the two want very different slack.
+# Checked against the gallery, the pairings past ~9px were dust beside a scratch
+# rather than the scratch.
+ON_MARK_SLACK = 9
 
 
 def ang_tol(r):
@@ -202,20 +208,32 @@ def main():
             gt_of[r["pair"]] = g
 
     def on_mark_flags(pair, feats, shape):
-        """Which of this photo's detections land on a hand-drawn stroke."""
+        """Which of this photo's detections are ON a hand-drawn stroke.
+
+        ON, not near. The evaluator counts a scratch as found when a detection
+        lands within 30px of the stroke, which is right for recall: a hand-drawn
+        line wanders, and being close is enough to say the scratch was noticed.
+        It is far too loose for deciding what a detection IS. Checked by eye, the
+        loosest pairings at that tolerance were specks of dust that merely
+        happened to sit beside a marked scratch, and calling those "scratch"
+        would poison the very table built to tell the two apart.
+
+        So the mark's own pixels have to touch the ink. A few pixels of slack is
+        kept for the width of the pen and the wobble of a hand.
+        """
         g = gt_of.get(pair)
         if not g or not feats:
             return [False] * len(feats)
         gt = cv2.imdecode(np.fromfile(g, np.uint8), cv2.IMREAD_GRAYSCALE)
         gt = cv2.resize(gt, (shape[1], shape[0]), interpolation=cv2.INTER_NEAREST)
-        near = cv2.dilate((gt > 127).astype(np.uint8),
-                          np.ones((TOLERANCE, TOLERANCE), np.uint8))
-        H, W = near.shape
+        ink = cv2.dilate((gt > 127).astype(np.uint8),
+                         np.ones((ON_MARK_SLACK, ON_MARK_SLACK), np.uint8))
+        H, W = ink.shape
         out = []
         for f in feats:
             x = int(min(max(f["vx"] / VIEW_W * W, 0), W - 1))
             y = int(min(max(f["vy"] / VIEW_W * W, 0), H - 1))
-            out.append(bool(near[y, x]))
+            out.append(bool(ink[y, x]))
         return out
 
     out = []

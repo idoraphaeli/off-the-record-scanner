@@ -99,6 +99,28 @@ P = dict(
     # 73->80 on validation, with recall unmoved at 62.5% on both.
     RADIAL_TOL_DEG=83,
     RADIAL_MIN_LEN=45,
+    # Is this bright thing sitting on black vinyl, or inside a patch of light?
+    #
+    # A scratch is a thin bright line on a dark surface, so the vinyl around it
+    # stays dark. A lamp reflection is a broad wash of light, and the lines the
+    # detector finds inside one are part of the wash. Measuring the patch a mark
+    # sits in therefore says something the mark's own shape cannot.
+    #
+    # Applied only to the outer part of the ring, because that is where the
+    # problem lives: measured over the hand-labelled sets, the inner half runs at
+    # 85% precision and the outer at 70%, since it is the outer half that catches
+    # a lamp at a glancing angle. Rejecting bright patches everywhere would cost
+    # scratches in the half that does not need the help.
+    #
+    # Chosen on the CALIBRATION records over a grid of both numbers, keeping at
+    # least 90% of the scratches: precision 83.3 -> 88.4 there. Scored once
+    # afterwards on validation, which took no part in the choice: 84.3 -> 89.8,
+    # holding 90% of the scratches. Measured in the unwrapped ring, which is
+    # where it runs -- the same rule read off the photograph wants a different
+    # number.
+    GLARE_RAD=0.65,        # inner than this, a mark is never judged on its patch
+    GLARE_PATCH_WIN=45,    # half-width of the patch measured around a mark
+    GLARE_PATCH_MAX=70,    # brighter than this, in the outer ring, is a lamp
     # Shape limits. why_missed.py attributed 15.6% of all missed hand-marked
     # scratches to MIN_LEN alone, and those misses clustered at length 15-28
     # against a bar of 30 that had no measurement behind it.
@@ -294,7 +316,13 @@ def _link_collinear(binary):
     return out
 
 
-def extract(smap, min_len=None):
+def extract(smap, min_len=None, ring=None, inner_px=0, radius=0):
+    """Threshold, then keep only what looks like damage.
+
+    `ring`, `inner_px` and `radius` are what the outer-ring brightness rule needs
+    to ask where a mark sits and what it is sitting on. Without them that rule is
+    skipped, so callers that only want shapes still work.
+    """
     min_len = P["MIN_LEN"] if min_len is None else min_len
     judgeable = smap[smap > 0]          # zeros are masked-out glare/unlit areas
     if judgeable.size < 1000:
@@ -336,6 +364,15 @@ def extract(smap, min_len=None):
         if angle > P["RADIAL_TOL_DEG"] and length > P["RADIAL_MIN_LEN"]:
             continue                            # the lamp's beam off the grooves
 
+        # out towards the rim, a bright thing inside a bright patch is the lamp
+        if ring is not None and radius:
+            if (inner_px + y + h / 2) / radius >= P["GLARE_RAD"]:
+                win = P["GLARE_PATCH_WIN"]
+                patch = ring[max(y - win, 0):y + h + win,
+                             max(x - win, 0):x + w + win]
+                if patch.size and patch.mean() > P["GLARE_PATCH_MAX"]:
+                    continue
+
         mask[labels == i] = 255
         scratches.append({"length": int(length), "thickness": round(thickness, 1),
                           "angle_to_groove": round(angle, 1)})
@@ -374,8 +411,8 @@ def detect(path):
     ring = polar[inner_px:outer_px]
 
     radial_map, tram_map = scratch_map(ring)
-    mask_a, scr_a = extract(radial_map)
-    mask_b, scr_b = extract(tram_map, min_len=P["TRAM_MIN_LEN"])
+    mask_a, scr_a = extract(radial_map, None, ring, inner_px, radius)
+    mask_b, scr_b = extract(tram_map, P["TRAM_MIN_LEN"], ring, inner_px, radius)
     ring_mask = cv2.bitwise_or(mask_a, mask_b)
     scratches = scr_a + scr_b
     det = rewrap(ring_mask, inner_px, center, radius, gray.shape)

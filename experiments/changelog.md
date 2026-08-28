@@ -229,3 +229,64 @@ moved from Near Mint to Very Good on the same photograph.
 **The bands need refitting against records graded by a person before the grade
 is shown to anyone as a number.** The detections themselves are better; the
 grade derived from them is now further off than it was.
+
+---
+
+# The outer-ring brightness rule — 2026-08-29
+
+## What made it findable
+
+The feature table had been built only from detections the labelling tool asked
+about, and that tool never shows a detection that landed on a pen mark. Several
+hundred of the most reliable scratches in the set — the ones sitting on Ido's own
+strokes — had therefore never been measured. Fixing that took the scratch sample
+from 62 to 588.
+
+It changed conclusions immediately. Local contrast, which looked like a
+separator on 62 examples, turned out to be nothing (0.44). Surrounding
+brightness, which had been dismissed as nothing on the same small sample, turned
+out to be the strongest single signal in the table. Two of the eleven rejected
+hypotheses were rejected on evidence too thin to carry the claim.
+
+A first attempt at including those detections used the evaluator's 30px
+tolerance, which is right for asking whether a scratch was noticed and far too
+loose for asking what a detection is: checked against a rendered gallery, the
+loosest pairings were specks of dust beside a marked scratch. Tightened to
+requiring the mark to touch the ink, which dropped 87 rows and took the worst
+pairing from 17px to 5px.
+
+## The rule
+
+A scratch is a thin bright line on dark vinyl, so the surface around it stays
+dark. A lamp reflection is a broad wash of light, and the lines found inside one
+belong to the wash. Applied only outside 0.65 of the radius, where the lamp
+problem lives — the inner half already runs at 85% precision against the outer
+half's 70%.
+
+    reject if  radius >= 0.65  AND  the patch around it is brighter than 70
+
+Both numbers chosen on a grid over the CALIBRATION records, holding at least 90%
+of the scratches, and measured in the unwrapped ring rather than the photograph,
+because that is where it runs.
+
+## What it did
+
+|            | recall        | precision     |
+|------------|---------------|---------------|
+| calibration| 60.7 -> 57.2  | 83.3 -> 88.4  |
+| validation | 65.2 -> 58.9  | 84.3 -> 89.8  |
+| test       | 56.9 -> 52.3  | 77.9 -> 85.2  |
+
+On the test set it removed 41% of the false detections for 7% of the scratches,
+and detections per photo fell from 17.0 to 14.8. Ido chose precision over recall
+explicitly, knowing this puts recall below the 55% floor discussed earlier.
+
+The precision figures come from the labelled detections that can be joined back
+to a component, so they sit a little above the official 77.2%; the DIFFERENCE is
+the measured part. Recall is exact — it is scored against the pen marks and needs
+no labelling.
+
+## Not promoted
+
+server/scanner/detector.py does NOT have this rule. Promoting it is a separate,
+deliberate step, and the app is now calling the deployed service.
