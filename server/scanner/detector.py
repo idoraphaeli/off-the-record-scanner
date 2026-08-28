@@ -371,11 +371,26 @@ def extract(smap, min_len=None):
     return mask, marks
 
 
+def disc_mask(center, radius, shape):
+    """The record itself: everything this code is ever allowed to touch."""
+    m = np.zeros(shape[:2], np.uint8)
+    cv2.circle(m, center, int(radius), 255, -1, cv2.LINE_AA)
+    return m
+
+
 def rewrap(ring_mask, inner_px, center, radius, out_shape):
-    """Map a ring mask back onto the original photo."""
+    """Map a ring mask back onto the original photo, clipped to the record.
+
+    The analysed band already stops short of the rim, but the warp back is
+    resampled and a mark sitting against the outer edge can spill a pixel or two
+    past it. Nothing outside the record is ever damage to the record, so the
+    boundary is enforced here rather than trusted: this is the one path every
+    detection takes on its way to the photograph.
+    """
     full_polar = np.zeros((radius, P["POLAR_STEPS"]), np.uint8)
     full_polar[inner_px:inner_px + ring_mask.shape[0]] = ring_mask
     polar = cv2.transpose(full_polar)
-    return cv2.warpPolar(polar, (out_shape[1], out_shape[0]), center, radius,
-                         cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP
-                         | cv2.INTER_NEAREST)
+    out = cv2.warpPolar(polar, (out_shape[1], out_shape[0]), center, radius,
+                        cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP
+                        | cv2.INTER_NEAREST)
+    return cv2.bitwise_and(out, disc_mask(center, radius, out_shape))

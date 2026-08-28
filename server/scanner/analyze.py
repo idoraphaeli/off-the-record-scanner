@@ -136,11 +136,20 @@ GRADE_BANDS = ((98, "M (Mint)"),
 SCORE_HALF_AT = 35.0
 
 
-def _paint(img, det_mask):
+def _paint(img, det_mask, keep_inside=None):
+    """Colour the marks onto the photograph.
+
+    The highlight is deliberately drawn wider than the mark it covers, so that a
+    hairline is visible at all. That halo has to be clipped too: a mark lying
+    against the rim would otherwise paint over the sleeve, and a colour on the
+    sleeve reads as the model claiming damage there.
+    """
     vis = img.copy().astype(np.float32)
     band = cv2.dilate((det_mask > 127).astype(np.uint8),
                       np.ones((MARK_HALO, MARK_HALO), np.uint8))
     band = cv2.GaussianBlur(band.astype(np.float32), (0, 0), 2.0)
+    if keep_inside is not None:
+        band = band * (keep_inside > 0)
     a = np.clip(band, 0, 1)[..., None] * MARK_ALPHA
     return (vis * (1 - a) + np.array([90, 255, 255], np.float32) * a).astype(np.uint8)
 
@@ -148,7 +157,8 @@ def _paint(img, det_mask):
 def _overlay(img, ring_mask, inner_px, center, radius, shape):
     """The photograph with every mark the model found painted onto it."""
     det = detector.rewrap(ring_mask, inner_px, center, radius, shape)
-    ok, buf = cv2.imencode(".jpg", _paint(img, det),
+    inside = detector.disc_mask(center, radius, shape)
+    ok, buf = cv2.imencode(".jpg", _paint(img, det, inside),
                            [int(cv2.IMWRITE_JPEG_QUALITY), 85])
     if not ok:
         return None

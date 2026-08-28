@@ -29,7 +29,7 @@ import numpy as np
 
 import detector
 from detector import P
-from evaluate_frozen import MIN_EXTRA_AREA
+from evaluate_frozen import MIN_EXTRA_AREA, TOLERANCE
 import cross_shot as cs
 from probe_width import width_profile
 
@@ -126,7 +126,7 @@ def photo_features(path):
                 "_ang": math.degrees(ang) % 360.0,
                 "vx": px * k_view, "vy": py * k_view,
             })
-    return out
+    return out, gray.shape
 
 
 def main():
@@ -150,13 +150,13 @@ def main():
             if r["label"] in ("scratch", "dirt", "false"):
                 labels[r["pair"]].append(r)
 
-    per_photo, profiles = {}, {}
+    per_photo, profiles, shape_of = {}, {}, {}
     for r in rows:
         path = os.path.join(PHOTOS, r["photo_file"])
         if not os.path.exists(path):
             continue
         try:
-            per_photo[r["pair"]] = photo_features(path)
+            per_photo[r["pair"]], shape_of[r["pair"]] = photo_features(path)
             profiles[r["pair"]] = cs.label_profile(path)
         except Exception:
             continue
@@ -191,6 +191,33 @@ def main():
                             break
             confirmed[a] = flags
 
+    # Detections sitting on a pen mark are scratches by construction — Ido drew
+    # the line himself — so they need no verdict from the labelling tool, and the
+    # tool never showed them. Leaving them out is what left the whole feature
+    # analysis running on 62 scratches when the set holds several hundred.
+    gt_of = {}
+    for r in rows:
+        g = os.path.join(GT, r["pair"] + ".png")
+        if os.path.exists(g):
+            gt_of[r["pair"]] = g
+
+    def on_mark_flags(pair, feats, shape):
+        """Which of this photo's detections land on a hand-drawn stroke."""
+        g = gt_of.get(pair)
+        if not g or not feats:
+            return [False] * len(feats)
+        gt = cv2.imdecode(np.fromfile(g, np.uint8), cv2.IMREAD_GRAYSCALE)
+        gt = cv2.resize(gt, (shape[1], shape[0]), interpolation=cv2.INTER_NEAREST)
+        near = cv2.dilate((gt > 127).astype(np.uint8),
+                          np.ones((TOLERANCE, TOLERANCE), np.uint8))
+        H, W = near.shape
+        out = []
+        for f in feats:
+            x = int(min(max(f["vx"] / VIEW_W * W, 0), W - 1))
+            y = int(min(max(f["vy"] / VIEW_W * W, 0), H - 1))
+            out.append(bool(near[y, x]))
+        return out
+
     out = []
     for pair, rows_l in labels.items():
         feats = per_photo.get(pair)
@@ -199,16 +226,36 @@ def main():
         flags = confirmed.get(pair, [False] * len(feats))
         arr = np.array([[f["vx"], f["vy"]] for f in feats], float)
         rec_name = rows_l[0]["record"]
+        claimed = set()
         for lr in rows_l:
             d = np.hypot(arr[:, 0] - lr["cx"], arr[:, 1] - lr["cy"])
             j = int(d.argmin())
             if d[j] > 30:
                 continue
+            claimed.add(j)
             row = {k: v for k, v in feats[j].items() if not k.startswith("_")}
             row.pop("vx", None)
             row.pop("vy", None)
             row["confirmed"] = 1.0 if flags[j] else 0.0
             row["kind"] = lr["label"]
+            row["source"] = "labelled"
+            row["record"] = rec_name
+            row["set"] = which_of.get(rec_name, "?")
+            out.append(row)
+
+        # and now the ones the tool never asked about
+        shape = shape_of.get(pair)
+        if shape is None:
+            continue
+        for j, hit in enumerate(on_mark_flags(pair, feats, shape)):
+            if not hit or j in claimed:
+                continue
+            row = {k: v for k, v in feats[j].items() if not k.startswith("_")}
+            row.pop("vx", None)
+            row.pop("vy", None)
+            row["confirmed"] = 1.0 if flags[j] else 0.0
+            row["kind"] = "scratch"
+            row["source"] = "on_mark"
             row["record"] = rec_name
             row["set"] = which_of.get(rec_name, "?")
             out.append(row)
