@@ -222,8 +222,8 @@ def _detect(image_bytes, index, want_overlay):
     ring_h, ring_area = ring.shape[0], ring.shape[0] * ring.shape[1]
 
     radial, tram, dead = detector.scratch_map(ring)
-    mask_r, marks_r = detector.extract(radial)
-    mask_t, marks_t = detector.extract(tram, min_len=P["TRAM_MIN_LEN"])
+    mask_r, marks_r = detector.extract(radial, None, ring, inner_px, radius)
+    mask_t, marks_t = detector.extract(tram, P["TRAM_MIN_LEN"], ring, inner_px, radius)
     marks = marks_r + marks_t
     del radial, tram
 

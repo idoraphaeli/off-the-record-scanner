@@ -286,7 +286,15 @@ to a component, so they sit a little above the official 77.2%; the DIFFERENCE is
 the measured part. Recall is exact — it is scored against the pen marks and needs
 no labelling.
 
-## Not promoted
+## Promoted the same day
 
-server/scanner/detector.py does NOT have this rule. Promoting it is a separate,
-deliberate step, and the app is now calling the deployed service.
+Ported by hand into server/scanner/detector.py, and analyze.py now hands the
+ring down so the rule can run. Verified after porting by running both copies
+over the same photographs and comparing the masks pixel for pixel -- identical
+on every one, with all 37 shared parameters holding the same value.
+
+Worth recording how that check nearly passed for the wrong reason: the first run
+agreed perfectly while calling extract WITHOUT the ring, so the new rule was
+skipped in both copies and the comparison proved only that the old behaviour
+matched. It was the detection counts being unchanged from before the rule that
+gave it away. A test that cannot fail is not a test.
