@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>תיוג זיהויים — Off The Record</title>
+<style>
+  :root {
+    --bg: #16161a; --panel: #202027; --line: #33333d;
+    --ink: #ececf0; --muted: #9a9aa6; --accent: #ff9640;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+           padding: 10px 18px; background: var(--panel);
+           border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .grow { flex: 1; }
+  .bar { height: 6px; background: #2c2c35; border-radius: 3px; overflow: hidden;
+         min-width: 180px; flex: 1; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; }
+  .tally { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+  .tally b { color: var(--ink); font-weight: 600; }
+  button { font: inherit; color: var(--ink); background: #2a2a33;
+           border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px;
+           cursor: pointer; }
+  button:hover { background: #34343f; }
+  main { display: grid; grid-template-columns: 1fr 480px; gap: 16px;
+         padding: 16px 18px 0; align-items: start; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  .wrap { position: relative; background: #000; border-radius: 10px;
+          overflow: hidden; border: 1px solid var(--line); }
+  .wrap img { display: block; width: 100%; }
+  .ring { position: absolute; border: 3px solid var(--accent); border-radius: 50%;
+          transform: translate(-50%, -50%); box-shadow: 0 0 0 3px rgba(0,0,0,.75),
+          inset 0 0 0 3px rgba(0,0,0,.75); pointer-events: none; }
+  .meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+          margin: 8px 2px 0; font-size: 13px; color: var(--muted); }
+  .badge { background: #2a2a33; border: 1px solid var(--line); border-radius: 999px;
+           padding: 2px 11px; font-size: 12px; }
+  footer { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 18px;
+           background: var(--panel); border-top: 1px solid var(--line); }
+  .choices { display: grid; gap: 10px; max-width: 1000px; margin: 0 auto; }
+  .choices button { display: flex; flex-direction: column; align-items: center;
+                    gap: 3px; padding: 11px 8px; font-size: 15px; }
+  .choices button span { font-size: 12px; color: var(--muted); }
+  .choices button.on { border-color: var(--accent); background: #3a2a18; }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 9px; }
+  .done { padding: 60px 20px; text-align: center; color: var(--muted); }
+  kbd { background: #2a2a33; border: 1px solid var(--line); border-radius: 5px;
+        padding: 1px 7px; font-size: 12px; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<header>
+  <button id="prev">‹ הקודם</button>
+  <button id="next">הבא ›</button>
+  <div class="bar"><i id="fill"></i></div>
+  <div id="left" class="badge"></div>
+  <div id="count" class="badge">—</div>
+  <div class="tally" id="tally"></div>
+  <div class="grow"></div>
+  <button id="jump">הבא שדורש הכרעה</button>
+  <button id="export">שמור קובץ תוצאות</button>
+</header>
+
+<main id="stage">
+  <div>
+    <div class="wrap"><img id="ctx" alt=""><div class="ring" id="ring"></div></div>
+    <div class="meta">
+      <span id="rec"></span>
+      <span class="badge" id="pos"></span>
+      <span class="badge" id="tier"></span>
+      <span class="badge" id="carried"
+            style="display:none; border-color:var(--accent); color:var(--accent)">
+        תויג על ידך בעבר — שנה רק אם אינו נכון
+      </span>
+    </div>
+  </div>
+  <div>
+    <div class="wrap"><img id="zoom" alt=""></div>
+    <div class="meta" id="zoomcap">מה שבתוך הטבעת הכתומה הוא מה שהמודל סימן</div>
+    <div class="wrap" id="penwrap" style="margin-top:10px; display:none">
+      <img id="zoom2" alt=""></div>
+    <div class="meta" id="pencap" style="display:none">
+      אותו מקום בדיוק בעותק שסימנת עליו בעט
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="choices" id="choices"></div>
+  <div class="hint">
+    <kbd id="keys">1 2 3 4</kbd> לתיוג &nbsp;·&nbsp;
+    <kbd>←</kbd> <kbd>→</kbd> מעבר &nbsp;·&nbsp; <kbd>Backspace</kbd> ביטול תיוג
+    &nbsp;·&nbsp; התקדמות נשמרת אוטומטית בדפדפן
+  </div>
+</footer>
+
+<script src="index.js"></script>
+<script>
+const DATA = window.LABEL_DATA;
+const MODE = DATA.mode || "extra";
+const KEY = "ott-labels-" + DATA.set + (MODE === "extra" ? "" : "-" + MODE);
+const items = DATA.items;
+let labels = JSON.parse(localStorage.getItem(KEY) || "{}");
+// verdicts you typed yourself, kept apart from the ones carried over, so a
+// carried verdict can be shown as provisional rather than silently counted
+let manual = new Set(JSON.parse(localStorage.getItem(KEY + "-manual") || "[]"));
+let i = 0;
+
+// A rebuild moves detections a little, which orphans the verdicts attached to
+// them. Rather than ask for the same judgements twice, the builder copies each
+// old verdict onto whichever new detection landed on the same spot, and they
+// are seeded here on first open.
+DATA.items.forEach(e => {
+  if (e.prefill && labels[e.id] === undefined) { labels[e.id] = e.prefill; }
+});
+
+// The two modes ask different questions, so they need different answers.
+// "extra" asks what an unmatched detection actually is; "matched" asks whether
+// the pen mark it was credited against is real, and whether it sits on it.
+const CHOICES = {
+  extra: [
+    ["scratch", "שריטה", "1 — נזק אמיתי שלא סימנתי"],
+    ["dirt", "לכלוך / אבק", "2 — אמיתי, מוריד איכות"],
+    ["false", "זיהוי שווא", "3 — אין שם כלום"],
+    ["unsure", "לא בטוח", "4 — דלג"]
+  ],
+  // Read top to bottom. First: is a blue line of yours visible near the ring?
+  // If not, it is 5 — that is the one that corrupts ground truth. If yes, the
+  // remaining question is what the ring is actually sitting on.
+  matched: [
+    ["hit", "פגע בסימון שלי", "1 — הטבעת על הקו הכחול"],
+    ["dust_on_mark", "אבק על גבי הסימון", "2 — נוגע בקו, אך ירה כנראה על האבק"],
+    ["other_scratch", "שריטה שלא סימנתי", "3 — נזק אמיתי, אבל לא הקו הזה"],
+    ["false_near", "השתקפות / שווא", "4 — הטבעת על כלום, הקו רק במקרה ליד"],
+    ["nomark", "אין שם סימון שלי", "5 — לא ציירתי שם כלום"],
+    ["unsure", "לא בטוח", "6 — דלג"]
+  ]
+}[MODE];
+
+const TALLY_IDS = CHOICES.map((_, k) => "t" + (k + 1));
+
+// how many detections this photo has, and which one we are on, so the eye knows
+// whether to expect more in the same place
+const perPhoto = {};
+items.forEach(e => { (perPhoto[e.pair] = perPhoto[e.pair] || []).push(e.id); });
+
+const $ = id => document.getElementById(id);
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(labels));
+  localStorage.setItem(KEY + "-manual", JSON.stringify([...manual]));
+}
+
+function render() {
+  const e = items[i];
+  if (!e) return;
+  // record names carry spaces and Hebrew, which must be escaped in a URL
+  $("ctx").src = encodeURI(e.photo);
+  $("zoom").src = encodeURI(e.crop);
+  if (e.crop2) {
+    $("zoom2").src = encodeURI(e.crop2);
+    $("penwrap").style.display = "";
+    $("pencap").style.display = "";
+  }
+  const ring = $("ring");
+  ring.style.left = (e.cx / e.vw * 100) + "%";
+  ring.style.top = (e.cy / e.vh * 100) + "%";
+  ring.style.width = (e.r * 2 / e.vw * 100) + "%";
+  ring.style.height = (e.r * 2 / e.vw * 100 * (e.vw / e.vh)) + "%";
+
+  $("rec").textContent = e.record + "  ·  צד " + e.side + "  ·  צילום " + e.shot;
+  const list = perPhoto[e.pair];
+  $("pos").textContent = "זיהוי " + (list.indexOf(e.id) + 1) + " מתוך " + list.length
+                       + " בתמונה זו";
+  // tier 0 means the set was built from whatever the detector currently holds,
+  // so there is no tighter-or-looser distinction to draw
+  $("tier").textContent = e.tier === 0 ? "המודל הנוכחי"
+                        : e.tier === 4 ? "בהגדרה המומלצת"
+                        : e.tier === 6 ? "נוסף בריכוך קל" : "נוסף בריכוך מלא";
+  $("count").textContent = (i + 1) + " / " + items.length;
+
+  // progress counts only what still needs a human: a carried-over verdict is
+  // already decided, and counting it would show the bar nearly full on open
+  const todo = items.filter(x => !x.prefill);
+  const done = todo.filter(x => labels[x.id] !== undefined).length;
+  $("fill").style.width = (done / Math.max(todo.length, 1) * 100) + "%";
+  $("left").textContent = todo.length
+    ? done + " / " + todo.length + " להכרעה" : "";
+  $("carried").style.display =
+    (labels[e.id] !== undefined && !manual.has(e.id)) ? "" : "none";
+
+  const c = {};
+  CHOICES.forEach(ch => { c[ch[0]] = 0; });
+  Object.values(labels).forEach(v => { if (c[v] !== undefined) c[v]++; });
+  CHOICES.forEach((ch, k) => { $(TALLY_IDS[k]).textContent = c[ch[0]]; });
+
+  document.querySelectorAll(".choices button").forEach(b => {
+    b.classList.toggle("on", labels[e.id] === b.dataset.v);
+  });
+
+  // keep the next few crops warm so paging never stalls on a decode
+  for (let k = 1; k <= 3; k++) {
+    const nx = items[i + k];
+    if (!nx) continue;
+    new Image().src = encodeURI(nx.crop);
+    if (nx.crop2) { new Image().src = encodeURI(nx.crop2); }
+  }
+}
+
+function go(step) {
+  i = Math.max(0, Math.min(items.length - 1, i + step));
+  render();
+}
+
+function set(v) {
+  const e = items[i];
+  if (!e) return;
+  labels[e.id] = v;
+  manual.add(e.id);
+  save();
+  if (i < items.length - 1) { i++; }
+  render();
+}
+
+function jumpUnlabelled() {
+  for (let k = 0; k < items.length; k++) {
+    const j = (i + 1 + k) % items.length;
+    if (!labels[items[j].id]) { i = j; render(); return; }
+  }
+  alert("הכל מתויג.");
+}
+
+// the answer buttons and the header tally are built from CHOICES, so the two
+// modes cannot drift apart or leave a stale label behind
+// auto-fit rather than a fixed count: six answers do not fit one row on a
+// laptop, and a squeezed button is a mis-click
+$("choices").style.gridTemplateColumns =
+  "repeat(auto-fit, minmax(" + (CHOICES.length > 4 ? 150 : 190) + "px, 1fr))";
+CHOICES.forEach((ch, k) => {
+  const b = document.createElement("button");
+  b.dataset.v = ch[0];
+  b.innerHTML = ch[1] + " <span>" + ch[2] + "</span>";
+  b.addEventListener("click", () => set(ch[0]));
+  $("choices").appendChild(b);
+
+  const s = document.createElement("span");
+  s.textContent = ch[1] + " ";
+  const n = document.createElement("b");
+  n.id = TALLY_IDS[k];
+  n.textContent = "0";
+  s.appendChild(n);
+  $("tally").appendChild(s);
+});
+$("keys").textContent = CHOICES.map((_, k) => k + 1).join(" ");
+if (MODE === "matched") {
+  $("zoomcap").textContent = "התמונה הנקייה — מה שהמודל ראה";
+}
+
+$("prev").onclick = () => go(-1);
+$("next").onclick = () => go(1);
+$("jump").onclick = jumpUnlabelled;
+
+$("export").onclick = () => {
+  const rows = items.map(e => ({
+    id: e.id, pair: e.pair, record: e.record, side: e.side, shot: e.shot,
+    tier: e.tier, cx: e.cx, cy: e.cy, label: labels[e.id] || null,
+    // whether the verdict was typed now or carried from the earlier round, so
+    // the analysis can tell the two apart if it ever matters
+    source: labels[e.id] === undefined ? null
+          : (manual.has(e.id) ? "manual" : "carried")
+  }));
+  const blob = new Blob([JSON.stringify(
+    { set: DATA.set, labelled: Object.keys(labels).length, total: items.length,
+      rows: rows }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "labels_" + DATA.set + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
+document.addEventListener("keydown", ev => {
+  const k = parseInt(ev.key, 10);
+  if (k >= 1 && k <= CHOICES.length) {
+    ev.preventDefault(); set(CHOICES[k - 1][0]); return;
+  }
+  // RTL: the arrow that points forward on screen is the LEFT one
+  if (ev.key === "ArrowLeft") { ev.preventDefault(); go(1); }
+  if (ev.key === "ArrowRight") { ev.preventDefault(); go(-1); }
+  if (ev.key === "Backspace") {
+    ev.preventDefault();
+    delete labels[items[i].id];
+    manual.delete(items[i].id);
+    save(); render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

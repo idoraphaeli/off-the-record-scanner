@@ -8,6 +8,28 @@ venv/
 *_stages/
 disc_check.jpg
 
+# Photographs. 3.6 GB of them, and git keeps whatever it is given for good —
+# there is no deleting it later. They also have to be downloaded again on every
+# cloud build, which turns a one-minute deploy into a long one. The dataset
+# lives outside the repository; only the code that reads it belongs here.
+Records_Data/
+Records_Data_New/
+Records_Data_New_jpg/
+*Records_Data_New_jpg - AGAIN/
+rec_test/
+
+# Galleries the scripts paint for a human to look through. All regenerable.
+Model_Alignment/
+Model_Errors/
+Model_Examples/
+Model_Examples_Band/
+Model_Examples_BlueCheck/
+Model_Examples_Compare/
+Model_False_Painted/
+Model_Labels/
+Model_Overlay/
+Model_Scratch_Painted/
+
 # Experiment outputs: regenerable from the scripts, too heavy for the repo.
 # results_v2/ is kept (it is the deliverable people actually look at).
 experiments/runs/
@@ -16,6 +38,18 @@ experiments/gt_flash_old/
 experiments/debug/
 experiments/review/
 experiments/results/
+experiments/audit_out/
+experiments/gt/
+experiments/Test1/
+experiments/Test2/
+
+# The labelling tools are rebuilt by build_label_tool.py whenever the detector
+# changes, so the crops and page are disposable. The verdict files are NOT:
+# they are days of hand-labelling and nothing can regenerate them. Ignoring the
+# CONTENTS rather than the folder is what lets them be rescued below — git will
+# not look inside a folder it has been told to skip.
+experiments/label_tool_*/*
+!experiments/label_tool_*/labels_*.json
 
 .DS_Store
 Thumbs.db

@@ -1,0 +1,126 @@
+[
+  {
+    "name": "baseline",
+    "recall": 40.3,
+    "found": 254,
+    "shown": 545,
+    "clean_fp": 4.0,
+    "zones": 630,
+    "params": {}
+  },
+  {
+    "name": "g6, band unchanged",
+    "recall": 49.7,
+    "found": 313,
+    "shown": 654,
+    "clean_fp": 4.89,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0
+    }
+  },
+  {
+    "name": "g6, band in only  .36/.93",
+    "recall": 51.6,
+    "found": 325,
+    "shown": 672,
+    "clean_fp": 5.53,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0,
+      "LABEL_R": 0.36
+    }
+  },
+  {
+    "name": "g6, band .36/.95",
+    "recall": 54.3,
+    "found": 342,
+    "shown": 715,
+    "clean_fp": 5.68,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0,
+      "LABEL_R": 0.36,
+      "OUTER_R": 0.95
+    }
+  },
+  {
+    "name": "g6, band .36/.97",
+    "recall": 54.9,
+    "found": 346,
+    "shown": 719,
+    "clean_fp": 6.11,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0,
+      "LABEL_R": 0.36,
+      "OUTER_R": 0.97
+    }
+  },
+  {
+    "name": "g6 .36/.95 + mild thr",
+    "recall": 58.6,
+    "found": 369,
+    "shown": 973,
+    "clean_fp": 8.05,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0,
+      "LABEL_R": 0.36,
+      "OUTER_R": 0.95,
+      "PCT_STRONG": 99.7,
+      "PCT_WEAK": 99.2
+    }
+  },
+  {
+    "name": "g5 .36/.95 + mild thr",
+    "recall": 59.8,
+    "found": 377,
+    "shown": 1037,
+    "clean_fp": 8.37,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 5.0,
+      "LABEL_R": 0.36,
+      "OUTER_R": 0.95,
+      "PCT_STRONG": 99.7,
+      "PCT_WEAK": 99.2
+    }
+  },
+  {
+    "name": "g6 .36/.95 + full thr",
+    "recall": 61.3,
+    "found": 386,
+    "shown": 1219,
+    "clean_fp": 10.32,
+    "zones": 630,
+    "params": {
+      "MIN_LEN": 15,
+      "MAX_THICK": 16,
+      "SHORT_LEN": 30,
+      "SHORT_ELONG": 6.0,
+      "LABEL_R": 0.36,
+      "OUTER_R": 0.95,
+      "PCT_STRONG": 99.5,
+      "PCT_WEAK": 99.0
+    }
+  }
+]
