@@ -15,6 +15,10 @@ ENV PYTHONUNBUFFERED=1 \
     OPENCV_NUM_THREADS=2 \
     OMP_NUM_THREADS=2
 
+# Cloud Build substitutes the commit; anything else just leaves it unknown.
+ARG BUILD_SHA=unknown
+ENV BUILD_SHA=$BUILD_SHA
+
 WORKDIR /app
 
 COPY server/requirements.txt .

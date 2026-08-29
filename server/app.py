@@ -67,9 +67,31 @@ def _require_admin(token):
         raise HTTPException(401, "invalid admin token")
 
 
+# Stamped into the image at build time so a running instance can be identified.
+# Without this, "is the fix deployed?" can only be answered by guessing from
+# behaviour, and a stale revision looks exactly like a bug in the current code.
+BUILD = os.environ.get("BUILD_SHA", "unknown")
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "feedback_enabled": bool(ADMIN_TOKEN)}
+    return {"status": "ok", "feedback_enabled": bool(ADMIN_TOKEN),
+            "build": BUILD, "detector": _detector_fingerprint()}
+
+
+def _detector_fingerprint():
+    """A short digest of the parameters this instance actually loaded.
+
+    Cheaper to compare than a commit hash and it answers the question that
+    matters: is the model running here the model we think it is.
+    """
+    import hashlib
+    from scanner.detector import P
+    keys = sorted(k for k in P if k.isupper())
+    blob = ";".join(f"{k}={P[k]}" for k in keys)
+    return {"params": hashlib.md5(blob.encode()).hexdigest()[:10],
+            "glare_rule": P.get("GLARE_PATCH_MAX"),
+            "clamps_to_disc": True}
 
 
 @app.get("/capture")
