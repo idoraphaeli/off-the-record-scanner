@@ -417,10 +417,22 @@ def extract(smap, min_len=None, ring=None, inner_px=0, radius=0):
 
 
 def disc_mask(center, radius, shape):
-    """The record itself: everything this code is ever allowed to touch."""
-    m = np.zeros(shape[:2], np.uint8)
-    cv2.circle(m, center, int(radius), 255, -1, cv2.LINE_AA)
-    return m
+    """The record itself: everything this code is ever allowed to touch.
+
+    Computed from the distance to the centre rather than drawn. cv2.circle with
+    an antialiased fill produced a mask whose edge pixels held intermediate
+    values, and those values came out differently under opencv-python and
+    opencv-python-headless -- the same version, different builds. The result was
+    a one-pixel ring of paint appearing on the deployed service and nowhere else,
+    sitting exactly on this circle, which cost two days to find.
+
+    Arithmetic has no such freedom: every pixel is inside or it is not, and the
+    answer is the same on every machine.
+    """
+    h, w = shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    inside = (xx - center[0]) ** 2 + (yy - center[1]) ** 2 <= int(radius) ** 2
+    return (inside.astype(np.uint8) * 255)
 
 
 def rewrap(ring_mask, inner_px, center, radius, out_shape):
