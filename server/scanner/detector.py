@@ -441,10 +441,18 @@ def disc_mask(center, radius, shape):
 
     Arithmetic has no such freedom: every pixel is inside or it is not, and the
     answer is the same on every machine.
+
+    The boundary is the outer edge of the band that was ANALYSED, not the edge
+    of the record. Between them lies a strip the detector never looks at, and
+    anything appearing there cannot be a finding -- only an artefact of mapping
+    the ring back onto the photograph. Clamping at the record's edge left that
+    strip open, and a ring of false marks lived in it at 0.99 of the radius.
+    Nothing is lost by closing it: no mark is ever found beyond OUTER_R.
     """
     h, w = shape[:2]
+    limit = int(P["OUTER_R"] * radius)
     yy, xx = np.ogrid[:h, :w]
-    inside = (xx - center[0]) ** 2 + (yy - center[1]) ** 2 <= int(radius) ** 2
+    inside = (xx - center[0]) ** 2 + (yy - center[1]) ** 2 <= limit ** 2
     return (inside.astype(np.uint8) * 255)
 
 
