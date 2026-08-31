@@ -21,4 +21,30 @@ cv2.ocl.setUseOpenCL(False)     # no GPU in the container; the runtime probing
 
 from .analyze import analyze, analyze_record   # noqa: E402  (after the cv2 setup)
 
-__all__ = ["analyze", "analyze_record"]
+
+def source_digest():
+    """A short hash of each file in this package, as it exists on disk.
+
+    Two days went into a ring of false marks that the deployed service painted
+    and an identical local copy did not. Every check available said the two were
+    the same: the build was green and came from the right commit, the parameters
+    matched, the library versions matched, the detections matched. None of them
+    compared the CODE, so none of them could have caught a stale copy of it.
+
+    This does. A digest per file, so a mismatch also names which file is wrong.
+    """
+    import hashlib
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = {}
+    for name in sorted(os.listdir(here)):
+        if not name.endswith(".py"):
+            continue
+        try:
+            with open(os.path.join(here, name), "rb") as fh:
+                out[name] = hashlib.md5(fh.read()).hexdigest()[:10]
+        except OSError:
+            out[name] = "unreadable"
+    return out
+
+
+__all__ = ["analyze", "analyze_record", "source_digest"]

@@ -86,12 +86,15 @@ def _detector_fingerprint():
     matters: is the model running here the model we think it is.
     """
     import hashlib
+    from scanner import source_digest
     from scanner.detector import P
     keys = sorted(k for k in P if k.isupper())
     blob = ";".join(f"{k}={P[k]}" for k in keys)
     return {"params": hashlib.md5(blob.encode()).hexdigest()[:10],
             "glare_rule": P.get("GLARE_PATCH_MAX"),
-            "clamps_to_disc": True}
+            # the parameters matching proved nothing while the output differed;
+            # this is the part that actually answers "is it the same code"
+            "source": source_digest()}
 
 
 @app.get("/capture")
