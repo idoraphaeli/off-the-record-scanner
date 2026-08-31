@@ -31,6 +31,8 @@ will grade lower than before. The bands need refitting before the grade is
 shown to anyone as a number.
 """
 
+import os
+
 import cv2
 import numpy as np
 
@@ -416,6 +418,17 @@ def extract(smap, min_len=None, ring=None, inner_px=0, radius=0):
     return mask, marks
 
 
+# The clamp that keeps marks inside the record can be switched off from the
+# host, so the two behaviours can be compared on the deployed service without
+# waiting for a build between them. A ring of false marks appears around the rim
+# in the cloud and on no local run of the same code on the same file -- reading
+# the code says the clamp can only remove pixels and never add them, but that
+# reading has been wrong three times now, so it gets tested instead of trusted.
+#
+# Set CLAMP_TO_DISC=0 to disable. Default is on.
+CLAMP_TO_DISC = os.environ.get("CLAMP_TO_DISC", "1") != "0"
+
+
 def disc_mask(center, radius, shape):
     """The record itself: everything this code is ever allowed to touch.
 
@@ -450,4 +463,6 @@ def rewrap(ring_mask, inner_px, center, radius, out_shape):
     out = cv2.warpPolar(polar, (out_shape[1], out_shape[0]), center, radius,
                         cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP
                         | cv2.INTER_NEAREST)
+    if not CLAMP_TO_DISC:
+        return out
     return cv2.bitwise_and(out, disc_mask(center, radius, out_shape))

@@ -157,7 +157,8 @@ def _paint(img, det_mask, keep_inside=None):
 def _overlay(img, ring_mask, inner_px, center, radius, shape):
     """The photograph with every mark the model found painted onto it."""
     det = detector.rewrap(ring_mask, inner_px, center, radius, shape)
-    inside = detector.disc_mask(center, radius, shape)
+    inside = (detector.disc_mask(center, radius, shape)
+              if detector.CLAMP_TO_DISC else None)
     ok, buf = cv2.imencode(".jpg", _paint(img, det, inside),
                            [int(cv2.IMWRITE_JPEG_QUALITY), 85])
     if not ok:
