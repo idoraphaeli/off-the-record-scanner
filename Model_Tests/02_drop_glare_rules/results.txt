@@ -30,15 +30,15 @@ Usage:  python test_02_drop_glare_rules.py [how many records]
 
 config                  per photo  confirmed   recall  after gate  scratches  blank   PRECISION  unjudged
 ----------------------------------------------------------------------------------------------------------
-1_baseline                   13.7        3.8    37.1%       10.3%   10 of 97      5       98.4%         7
-2_no_radial_beam             15.2        3.9    39.2%       13.4%   13 of 97      3       98.5%         8
-3_no_bright_patch            15.9        4.2    41.2%       11.3%   11 of 97      3       98.5%        11
-4_no_groove_line             23.2        6.7    42.3%       14.4%   14 of 97      2       98.9%        34
-5_none_of_the_three          28.7        7.5    50.5%       20.6%   20 of 97      1       96.1%        40
+1_baseline                   14.8        3.6    46.5%       15.7%  50 of 318     15       98.7%        40
+2_no_radial_beam             16.0        3.8    48.1%       17.0%  54 of 318     12       97.0%        43
+3_no_bright_patch            17.6        4.2    49.4%       16.7%  53 of 318     10       96.1%        50
+4_no_groove_line             24.3        6.5    52.8%       19.2%  61 of 318      5       97.8%       129
+5_none_of_the_three          30.0        7.5    59.1%       23.6%  75 of 318      3       93.5%       145
 
 
 config 1_baseline   nothing changed
-  confirmed: 10 on a pen mark, 1 scratch, 52 dirt, 1 false, 7 unjudged
+  confirmed: 44 on a pen mark, 3 scratch, 109 dirt, 2 false, 40 unjudged
   baldi_olier                 a  found   10 -> kept   3   scratches  2/5   ->  1
   baldi_olier                 b  found   15 -> kept   5   scratches  0/0   ->  0
   dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
@@ -58,10 +58,46 @@ config 1_baseline   nothing changed
   rega_im_dodli               b  found    3 -> kept   2   scratches  0/3   ->  0
   shirim_bezvaaim_tiviim      a  found   12 -> kept   7   scratches  3/7   ->  1
   shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   16 -> kept   5   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   12 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   18 -> kept   6   scratches  2/4   ->  1
+  shok_hameziot               a  found   23 -> kept   6   scratches  1/1   ->  1
+  shok_hameziot               b  found   15 -> kept   4   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   13 -> kept   0   scratches  2/6   ->  0
+  sipur_musicali_leyeladim    b  found   15 -> kept   5   scratches  2/3   ->  1
+  the_kameri                  a  found   14 -> kept   1   scratches  0/0   ->  0
+  the_kameri                  b  found   16 -> kept   3   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   19 -> kept   8   scratches  2/7   ->  1
+  tizmoret_zahal              b  found   18 -> kept   5   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   13 -> kept   3   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   19 -> kept   0   scratches  1/5   ->  0
+  yerushalam_shel_zahav       a  found   10 -> kept   3   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found    9 -> kept   0   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   12 -> kept   0   scratches  6/8   ->  0
+  zaz_vezaza                  b  found   18 -> kept   7   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   13 -> kept   3   scratches  3/4   ->  1
+  אנו עולים ושרים             b  found   16 -> kept   6   scratches  9/14  ->  3
+  הגשש החיוור                 a  found   18 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   15 -> kept   5   scratches  4/5   ->  4
+  הד ארצי                     b  found   13 -> kept   0   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   24 -> kept   8   scratches 11/21  ->  5
+  הד ארצי - נורית             b  found   21 -> kept   6   scratches  5/6   ->  2
+  הצברים שלנו                 a  found    8 -> kept   0   scratches  1/8   ->  0
+  הצברים שלנו                 b  found   16 -> kept   0   scratches  3/3   ->  0
+  מצעד הכוכבים                b  found    4 -> kept   0   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   17 -> kept   4   scratches  7/11  ->  2
+  סיפורי לילה טוב             b  found   14 -> kept   4   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   16 -> kept   3   scratches  5/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   12 -> kept   5   scratches  6/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   15 -> kept   8   scratches  3/13  ->  2
+  ציפי שביט והדרדסים          a  found   12 -> kept   3   scratches  8/20  ->  1
+  ציפי שביט והדרדסים          b  found   21 -> kept   5   scratches  3/11  ->  1
+  ציפיטפוט                    a  found   20 -> kept   6   scratches  7/12  ->  0
+  ציפיטפוט                    b  found   19 -> kept   6   scratches  3/5   ->  2
 
 
 config 2_no_radial_beam   {'RADIAL_TOL_DEG': 91.0}
-  confirmed: 12 on a pen mark, 1 scratch, 52 dirt, 1 false, 8 unjudged
+  confirmed: 47 on a pen mark, 3 scratch, 111 dirt, 5 false, 43 unjudged
   baldi_olier                 a  found   13 -> kept   3   scratches  2/5   ->  1
   baldi_olier                 b  found   16 -> kept   5   scratches  0/0   ->  0
   dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
@@ -81,10 +117,46 @@ config 2_no_radial_beam   {'RADIAL_TOL_DEG': 91.0}
   rega_im_dodli               b  found    9 -> kept   2   scratches  0/3   ->  0
   shirim_bezvaaim_tiviim      a  found   13 -> kept   7   scratches  4/7   ->  1
   shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   16 -> kept   5   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   13 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   19 -> kept   6   scratches  2/4   ->  1
+  shok_hameziot               a  found   23 -> kept   6   scratches  1/1   ->  1
+  shok_hameziot               b  found   16 -> kept   4   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   13 -> kept   0   scratches  2/6   ->  0
+  sipur_musicali_leyeladim    b  found   17 -> kept   5   scratches  2/3   ->  1
+  the_kameri                  a  found   14 -> kept   1   scratches  0/0   ->  0
+  the_kameri                  b  found   16 -> kept   3   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   19 -> kept   8   scratches  2/7   ->  1
+  tizmoret_zahal              b  found   18 -> kept   5   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   16 -> kept   5   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   20 -> kept   0   scratches  2/5   ->  0
+  yerushalam_shel_zahav       a  found   11 -> kept   3   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found    9 -> kept   0   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   13 -> kept   0   scratches  6/8   ->  0
+  zaz_vezaza                  b  found   18 -> kept   7   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   13 -> kept   3   scratches  3/4   ->  1
+  אנו עולים ושרים             b  found   17 -> kept   6   scratches 10/14  ->  3
+  הגשש החיוור                 a  found   21 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   16 -> kept   5   scratches  4/5   ->  4
+  הד ארצי                     b  found   14 -> kept   1   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   25 -> kept   8   scratches 11/21  ->  5
+  הד ארצי - נורית             b  found   21 -> kept   6   scratches  5/6   ->  2
+  הצברים שלנו                 a  found    8 -> kept   0   scratches  1/8   ->  0
+  הצברים שלנו                 b  found   17 -> kept   0   scratches  3/3   ->  0
+  מצעד הכוכבים                b  found    7 -> kept   0   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   20 -> kept   4   scratches  7/11  ->  2
+  סיפורי לילה טוב             b  found   15 -> kept   4   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   20 -> kept   4   scratches  5/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   13 -> kept   6   scratches  6/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   15 -> kept   8   scratches  3/13  ->  2
+  ציפי שביט והדרדסים          a  found   13 -> kept   3   scratches  8/20  ->  1
+  ציפי שביט והדרדסים          b  found   26 -> kept   7   scratches  4/11  ->  2
+  ציפיטפוט                    a  found   21 -> kept   6   scratches  7/12  ->  0
+  ציפיטפוט                    b  found   20 -> kept   7   scratches  3/5   ->  2
 
 
 config 3_no_bright_patch   {'GLARE_PATCH_MAX': 256}
-  confirmed: 11 on a pen mark, 1 scratch, 55 dirt, 1 false, 11 unjudged
+  confirmed: 47 on a pen mark, 4 scratch, 123 dirt, 7 false, 50 unjudged
   baldi_olier                 a  found   12 -> kept   3   scratches  2/5   ->  1
   baldi_olier                 b  found   20 -> kept   5   scratches  0/0   ->  0
   dianyland                   a  found   13 -> kept   5   scratches  1/4   ->  1
@@ -104,10 +176,46 @@ config 3_no_bright_patch   {'GLARE_PATCH_MAX': 256}
   rega_im_dodli               b  found    8 -> kept   2   scratches  0/3   ->  0
   shirim_bezvaaim_tiviim      a  found   13 -> kept   8   scratches  3/7   ->  1
   shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   16 -> kept   6   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   13 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   18 -> kept   7   scratches  2/4   ->  1
+  shok_hameziot               a  found   25 -> kept   6   scratches  1/1   ->  1
+  shok_hameziot               b  found   15 -> kept   4   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   15 -> kept   0   scratches  2/6   ->  0
+  sipur_musicali_leyeladim    b  found   20 -> kept   6   scratches  2/3   ->  1
+  the_kameri                  a  found   17 -> kept   1   scratches  0/0   ->  0
+  the_kameri                  b  found   20 -> kept   3   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   20 -> kept   8   scratches  2/7   ->  1
+  tizmoret_zahal              b  found   18 -> kept   5   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   15 -> kept   3   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   24 -> kept   4   scratches  1/5   ->  0
+  yerushalam_shel_zahav       a  found   13 -> kept   3   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found   12 -> kept   0   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   14 -> kept   0   scratches  6/8   ->  0
+  zaz_vezaza                  b  found   21 -> kept   8   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   23 -> kept   3   scratches  3/4   ->  1
+  אנו עולים ושרים             b  found   23 -> kept   7   scratches  9/14  ->  3
+  הגשש החיוור                 a  found   21 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   24 -> kept   6   scratches  4/5   ->  4
+  הד ארצי                     b  found   18 -> kept   0   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   28 -> kept   9   scratches 13/21  ->  5
+  הד ארצי - נורית             b  found   25 -> kept   8   scratches  5/6   ->  2
+  הצברים שלנו                 a  found    9 -> kept   0   scratches  1/8   ->  0
+  הצברים שלנו                 b  found   19 -> kept   1   scratches  3/3   ->  1
+  מצעד הכוכבים                b  found   12 -> kept   1   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   19 -> kept   4   scratches  7/11  ->  2
+  סיפורי לילה טוב             b  found   15 -> kept   6   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   20 -> kept   5   scratches  5/7   ->  0
+  פסטיבל שירי ילדים 3         a  found   14 -> kept   6   scratches  6/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   19 -> kept  10   scratches  5/13  ->  2
+  ציפי שביט והדרדסים          a  found   13 -> kept   4   scratches  8/20  ->  1
+  ציפי שביט והדרדסים          b  found   22 -> kept   6   scratches  3/11  ->  2
+  ציפיטפוט                    a  found   22 -> kept   7   scratches  8/12  ->  1
+  ציפיטפוט                    b  found   23 -> kept   6   scratches  3/5   ->  2
 
 
 config 4_no_groove_line   {'GROOVE_TOL_DEG': -1.0}
-  confirmed: 14 on a pen mark, 2 scratch, 75 dirt, 1 false, 34 unjudged
+  confirmed: 55 on a pen mark, 4 scratch, 160 dirt, 5 false, 129 unjudged
   baldi_olier                 a  found   19 -> kept   4   scratches  2/5   ->  1
   baldi_olier                 b  found   25 -> kept   7   scratches  0/0   ->  0
   dianyland                   a  found   19 -> kept   7   scratches  1/4   ->  1
@@ -127,10 +235,46 @@ config 4_no_groove_line   {'GROOVE_TOL_DEG': -1.0}
   rega_im_dodli               b  found   14 -> kept   4   scratches  3/3   ->  2
   shirim_bezvaaim_tiviim      a  found   18 -> kept  12   scratches  3/7   ->  2
   shirim_bezvaaim_tiviim      b  found   27 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   29 -> kept   7   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   26 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   34 -> kept   8   scratches  2/4   ->  2
+  shok_hameziot               a  found   35 -> kept   7   scratches  1/1   ->  1
+  shok_hameziot               b  found   26 -> kept   9   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   19 -> kept   7   scratches  3/6   ->  2
+  sipur_musicali_leyeladim    b  found   22 -> kept   6   scratches  2/3   ->  1
+  the_kameri                  a  found   20 -> kept   2   scratches  0/0   ->  0
+  the_kameri                  b  found   26 -> kept   6   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   27 -> kept  13   scratches  3/7   ->  2
+  tizmoret_zahal              b  found   22 -> kept  11   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   24 -> kept   8   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   33 -> kept   7   scratches  3/5   ->  0
+  yerushalam_shel_zahav       a  found   16 -> kept   6   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found   19 -> kept   5   scratches  1/1   ->  1
+  zaz_vezaza                  a  found   24 -> kept   5   scratches  6/8   ->  2
+  zaz_vezaza                  b  found   29 -> kept   9   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   17 -> kept   4   scratches  3/4   ->  2
+  אנו עולים ושרים             b  found   26 -> kept   8   scratches  9/14  ->  3
+  הגשש החיוור                 a  found   26 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   24 -> kept   5   scratches  4/5   ->  3
+  הד ארצי                     b  found   18 -> kept   4   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   34 -> kept   9   scratches 12/21  ->  5
+  הד ארצי - נורית             b  found   26 -> kept   9   scratches  5/6   ->  3
+  הצברים שלנו                 a  found   17 -> kept   0   scratches  2/8   ->  0
+  הצברים שלנו                 b  found   24 -> kept   3   scratches  3/3   ->  1
+  מצעד הכוכבים                b  found   20 -> kept   1   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   31 -> kept   4   scratches  8/11  ->  2
+  סיפורי לילה טוב             b  found   22 -> kept   7   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   20 -> kept   4   scratches  5/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   26 -> kept   8   scratches 10/14  ->  5
+  פסטיבל שירי ילדים 3         b  found   33 -> kept  12   scratches  4/13  ->  2
+  ציפי שביט והדרדסים          a  found   20 -> kept   4   scratches 10/20  ->  1
+  ציפי שביט והדרדסים          b  found   26 -> kept   8   scratches  4/11  ->  1
+  ציפיטפוט                    a  found   28 -> kept  11   scratches  7/12  ->  0
+  ציפיטפוט                    b  found   30 -> kept  12   scratches  3/5   ->  1
 
 
 config 5_none_of_the_three   {'RADIAL_TOL_DEG': 91.0, 'GLARE_PATCH_MAX': 256, 'GROOVE_TOL_DEG': -1.0}
-  confirmed: 18 on a pen mark, 2 scratch, 78 dirt, 4 false, 40 unjudged
+  confirmed: 67 on a pen mark, 5 scratch, 174 dirt, 17 false, 145 unjudged
   baldi_olier                 a  found   24 -> kept   4   scratches  2/5   ->  1
   baldi_olier                 b  found   31 -> kept   8   scratches  0/0   ->  0
   dianyland                   a  found   27 -> kept   9   scratches  1/4   ->  1
@@ -150,3 +294,39 @@ config 5_none_of_the_three   {'RADIAL_TOL_DEG': 91.0, 'GLARE_PATCH_MAX': 256, 'G
   rega_im_dodli               b  found   30 -> kept   5   scratches  3/3   ->  2
   shirim_bezvaaim_tiviim      a  found   21 -> kept  13   scratches  4/7   ->  2
   shirim_bezvaaim_tiviim      b  found   27 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   32 -> kept   8   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   28 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   38 -> kept  10   scratches  2/4   ->  2
+  shok_hameziot               a  found   40 -> kept   7   scratches  1/1   ->  1
+  shok_hameziot               b  found   29 -> kept   9   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   26 -> kept   6   scratches  4/6   ->  2
+  sipur_musicali_leyeladim    b  found   31 -> kept   7   scratches  2/3   ->  1
+  the_kameri                  a  found   23 -> kept   3   scratches  0/0   ->  0
+  the_kameri                  b  found   30 -> kept   6   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   29 -> kept  13   scratches  3/7   ->  2
+  tizmoret_zahal              b  found   22 -> kept  11   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   29 -> kept   8   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   40 -> kept   9   scratches  3/5   ->  0
+  yerushalam_shel_zahav       a  found   22 -> kept   8   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found   25 -> kept   6   scratches  1/1   ->  1
+  zaz_vezaza                  a  found   27 -> kept   5   scratches  6/8   ->  2
+  zaz_vezaza                  b  found   33 -> kept  10   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   30 -> kept   4   scratches  3/4   ->  2
+  אנו עולים ושרים             b  found   36 -> kept  10   scratches 10/14  ->  3
+  הגשש החיוור                 a  found   31 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   34 -> kept   6   scratches  4/5   ->  3
+  הד ארצי                     b  found   27 -> kept   4   scratches  2/2   ->  1
+  הד ארצי - נורית             a  found   41 -> kept  12   scratches 14/21  ->  5
+  הד ארצי - נורית             b  found   31 -> kept  10   scratches  5/6   ->  3
+  הצברים שלנו                 a  found   18 -> kept   1   scratches  2/8   ->  0
+  הצברים שלנו                 b  found   29 -> kept   4   scratches  3/3   ->  2
+  מצעד הכוכבים                b  found   35 -> kept   4   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   38 -> kept   5   scratches  8/11  ->  2
+  סיפורי לילה טוב             b  found   26 -> kept   8   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   30 -> kept   8   scratches  5/7   ->  2
+  פסטיבל שירי ילדים 3         a  found   30 -> kept  11   scratches 10/14  ->  7
+  פסטיבל שירי ילדים 3         b  found   38 -> kept  14   scratches  9/13  ->  2
+  ציפי שביט והדרדסים          a  found   24 -> kept   5   scratches 10/20  ->  1
+  ציפי שביט והדרדסים          b  found   35 -> kept  10   scratches  6/11  ->  3
+  ציפיטפוט                    a  found   33 -> kept  13   scratches  8/12  ->  1
+  ציפיטפוט                    b  found   37 -> kept  13   scratches  3/5   ->  1

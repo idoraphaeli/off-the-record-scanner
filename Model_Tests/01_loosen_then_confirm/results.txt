@@ -36,15 +36,15 @@ Usage:  python test_01_loosen_then_confirm.py [how many records]
 
 level         per photo  confirmed   recall  after gate   prec  after   scratches kept
 --------------------------------------------------------------------------------------
-1_current          13.7        3.8    37.1%       10.3%    12%    12%         10 of 97
-2_open             20.6        5.0    49.5%       10.3%    10%    11%         10 of 97
-3_wide             28.5        7.5    48.5%       16.5%     8%    10%         16 of 97
-4_loose            39.5        9.7    53.6%       19.6%     6%     9%         19 of 97
-5_loosest          54.3       12.7    67.0%       26.8%     6%     6%         26 of 97
+1_current          14.8        3.6    46.5%       15.7%    16%    22%        50 of 318
+2_open             21.4        5.3    54.7%       19.8%    14%    20%        63 of 318
+3_wide             30.0        7.4    60.7%       23.0%    11%    15%        73 of 318
+4_loose            39.9       10.0    63.8%       26.1%     9%    13%        83 of 318
+5_loosest          54.8       13.1    72.3%       24.2%     6%     8%        77 of 318
 
 
 level 1_current   {'PCT_STRONG': 99.3, 'PCT_WEAK': 98.7, 'THR_FLOOR': 25}
-  alignment ok on 18 of 19 sides
+  alignment ok on 52 of 55 sides
   baldi_olier                 a  found   10 -> kept   3   scratches  2/5   ->  1
   baldi_olier                 b  found   15 -> kept   5   scratches  0/0   ->  0
   dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
@@ -64,10 +64,46 @@ level 1_current   {'PCT_STRONG': 99.3, 'PCT_WEAK': 98.7, 'THR_FLOOR': 25}
   rega_im_dodli               b  found    3 -> kept   2   scratches  0/3   ->  0
   shirim_bezvaaim_tiviim      a  found   12 -> kept   7   scratches  3/7   ->  1
   shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   16 -> kept   5   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   12 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   18 -> kept   6   scratches  2/4   ->  1
+  shok_hameziot               a  found   23 -> kept   6   scratches  1/1   ->  1
+  shok_hameziot               b  found   15 -> kept   4   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   13 -> kept   0   scratches  2/6   ->  0
+  sipur_musicali_leyeladim    b  found   15 -> kept   5   scratches  2/3   ->  1
+  the_kameri                  a  found   14 -> kept   1   scratches  0/0   ->  0
+  the_kameri                  b  found   16 -> kept   3   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   19 -> kept   8   scratches  2/7   ->  1
+  tizmoret_zahal              b  found   18 -> kept   5   scratches  2/5   ->  2
+  yafa_yarkobi                a  found   13 -> kept   3   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   19 -> kept   0   scratches  1/5   ->  0
+  yerushalam_shel_zahav       a  found   10 -> kept   3   scratches  0/1   ->  0
+  yerushalam_shel_zahav       b  found    9 -> kept   0   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   12 -> kept   0   scratches  6/8   ->  0
+  zaz_vezaza                  b  found   18 -> kept   7   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   13 -> kept   3   scratches  3/4   ->  1
+  אנו עולים ושרים             b  found   16 -> kept   6   scratches  9/14  ->  3
+  הגשש החיוור                 a  found   18 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   15 -> kept   5   scratches  4/5   ->  4
+  הד ארצי                     b  found   13 -> kept   0   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   24 -> kept   8   scratches 11/21  ->  5
+  הד ארצי - נורית             b  found   21 -> kept   6   scratches  5/6   ->  2
+  הצברים שלנו                 a  found    8 -> kept   0   scratches  1/8   ->  0
+  הצברים שלנו                 b  found   16 -> kept   0   scratches  3/3   ->  0
+  מצעד הכוכבים                b  found    4 -> kept   0   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   17 -> kept   4   scratches  7/11  ->  2
+  סיפורי לילה טוב             b  found   14 -> kept   4   scratches  3/5   ->  1
+  עוד שירי משחק               b  found   16 -> kept   3   scratches  5/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   12 -> kept   5   scratches  6/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   15 -> kept   8   scratches  3/13  ->  2
+  ציפי שביט והדרדסים          a  found   12 -> kept   3   scratches  8/20  ->  1
+  ציפי שביט והדרדסים          b  found   21 -> kept   5   scratches  3/11  ->  1
+  ציפיטפוט                    a  found   20 -> kept   6   scratches  7/12  ->  0
+  ציפיטפוט                    b  found   19 -> kept   6   scratches  3/5   ->  2
 
 
 level 2_open   {'PCT_STRONG': 99.0, 'PCT_WEAK': 98.2, 'THR_FLOOR': 21}
-  alignment ok on 18 of 19 sides
+  alignment ok on 52 of 55 sides
   baldi_olier                 a  found   14 -> kept   3   scratches  4/5   ->  1
   baldi_olier                 b  found   16 -> kept   5   scratches  0/0   ->  0
   dianyland                   a  found   18 -> kept   4   scratches  1/4   ->  0
@@ -87,10 +123,46 @@ level 2_open   {'PCT_STRONG': 99.0, 'PCT_WEAK': 98.2, 'THR_FLOOR': 21}
   rega_im_dodli               b  found   12 -> kept   3   scratches  1/3   ->  0
   shirim_bezvaaim_tiviim      a  found   25 -> kept   8   scratches  5/7   ->  0
   shirim_bezvaaim_tiviim      b  found   28 -> kept   0   scratches  8/9   ->  0
+  shlishiat_hamaapil          a  found   28 -> kept   9   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   21 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   26 -> kept  10   scratches  2/4   ->  1
+  shok_hameziot               a  found   32 -> kept   5   scratches  1/1   ->  1
+  shok_hameziot               b  found   17 -> kept   5   scratches  1/1   ->  1
+  sipur_musicali_leyeladim    a  found   18 -> kept   5   scratches  3/6   ->  2
+  sipur_musicali_leyeladim    b  found   14 -> kept   5   scratches  2/3   ->  1
+  the_kameri                  a  found   14 -> kept   0   scratches  0/0   ->  0
+  the_kameri                  b  found   26 -> kept   4   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   30 -> kept  13   scratches  4/7   ->  4
+  tizmoret_zahal              b  found   28 -> kept  13   scratches  4/5   ->  2
+  yafa_yarkobi                a  found   20 -> kept   7   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   24 -> kept   6   scratches  2/5   ->  1
+  yerushalam_shel_zahav       a  found   18 -> kept   5   scratches  1/1   ->  1
+  yerushalam_shel_zahav       b  found   16 -> kept   1   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   22 -> kept   0   scratches  6/8   ->  0
+  zaz_vezaza                  b  found   29 -> kept   8   scratches  2/6   ->  1
+  אנו עולים ושרים             a  found   18 -> kept   4   scratches  4/4   ->  1
+  אנו עולים ושרים             b  found   24 -> kept   6   scratches  8/14  ->  6
+  הגשש החיוור                 a  found   23 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   20 -> kept   4   scratches  5/5   ->  3
+  הד ארצי                     b  found   18 -> kept   5   scratches  1/2   ->  0
+  הד ארצי - נורית             a  found   29 -> kept   6   scratches 11/21  ->  4
+  הד ארצי - נורית             b  found   23 -> kept   6   scratches  5/6   ->  2
+  הצברים שלנו                 a  found   18 -> kept   1   scratches  2/8   ->  0
+  הצברים שלנו                 b  found   22 -> kept   4   scratches  3/3   ->  1
+  מצעד הכוכבים                b  found    8 -> kept   1   scratches  3/6   ->  0
+  סיפורי לילה טוב             a  found   27 -> kept   7   scratches  8/11  ->  6
+  סיפורי לילה טוב             b  found   17 -> kept   5   scratches  2/5   ->  1
+  עוד שירי משחק               b  found   20 -> kept   6   scratches  6/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   18 -> kept   6   scratches  7/14  ->  4
+  פסטיבל שירי ילדים 3         b  found   25 -> kept  13   scratches  4/13  ->  2
+  ציפי שביט והדרדסים          a  found   21 -> kept   6   scratches  9/20  ->  2
+  ציפי שביט והדרדסים          b  found   20 -> kept   6   scratches  5/11  ->  1
+  ציפיטפוט                    a  found   26 -> kept   6   scratches  7/12  ->  0
+  ציפיטפוט                    b  found   23 -> kept   9   scratches  3/5   ->  2
 
 
 level 3_wide   {'PCT_STRONG': 98.6, 'PCT_WEAK': 97.6, 'THR_FLOOR': 17}
-  alignment ok on 18 of 19 sides
+  alignment ok on 52 of 55 sides
   baldi_olier                 a  found   25 -> kept   4   scratches  4/5   ->  1
   baldi_olier                 b  found   26 -> kept   7   scratches  0/0   ->  0
   dianyland                   a  found   31 -> kept  10   scratches  1/4   ->  1
@@ -110,10 +182,46 @@ level 3_wide   {'PCT_STRONG': 98.6, 'PCT_WEAK': 97.6, 'THR_FLOOR': 17}
   rega_im_dodli               b  found   21 -> kept   7   scratches  2/3   ->  1
   shirim_bezvaaim_tiviim      a  found   36 -> kept  14   scratches  4/7   ->  1
   shirim_bezvaaim_tiviim      b  found   33 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   38 -> kept  14   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   32 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   35 -> kept  14   scratches  3/4   ->  2
+  shok_hameziot               a  found   43 -> kept   8   scratches  1/1   ->  1
+  shok_hameziot               b  found   31 -> kept   9   scratches  0/1   ->  0
+  sipur_musicali_leyeladim    a  found   28 -> kept   7   scratches  4/6   ->  2
+  sipur_musicali_leyeladim    b  found   21 -> kept   4   scratches  2/3   ->  1
+  the_kameri                  a  found   34 -> kept   2   scratches  0/0   ->  0
+  the_kameri                  b  found   33 -> kept   6   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   31 -> kept  15   scratches  4/7   ->  4
+  tizmoret_zahal              b  found   35 -> kept  15   scratches  5/5   ->  3
+  yafa_yarkobi                a  found   25 -> kept   7   scratches  2/3   ->  2
+  yafa_yarkobi                b  found   37 -> kept   9   scratches  3/5   ->  1
+  yerushalam_shel_zahav       a  found   26 -> kept   4   scratches  1/1   ->  1
+  yerushalam_shel_zahav       b  found   23 -> kept   4   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   27 -> kept   6   scratches  8/8   ->  0
+  zaz_vezaza                  b  found   40 -> kept  12   scratches  4/6   ->  1
+  אנו עולים ושרים             a  found   29 -> kept   7   scratches  4/4   ->  2
+  אנו עולים ושרים             b  found   35 -> kept   5   scratches 11/14  ->  2
+  הגשש החיוור                 a  found   28 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   30 -> kept   7   scratches  5/5   ->  3
+  הד ארצי                     b  found   26 -> kept   7   scratches  1/2   ->  0
+  הד ארצי - נורית             a  found   39 -> kept  11   scratches 12/21  ->  6
+  הד ארצי - נורית             b  found   32 -> kept   7   scratches  5/6   ->  2
+  הצברים שלנו                 a  found   35 -> kept   2   scratches  2/8   ->  0
+  הצברים שלנו                 b  found   33 -> kept   8   scratches  3/3   ->  0
+  מצעד הכוכבים                b  found   14 -> kept   2   scratches  6/6   ->  1
+  סיפורי לילה טוב             a  found   36 -> kept   9   scratches  9/11  ->  6
+  סיפורי לילה טוב             b  found   25 -> kept   5   scratches  1/5   ->  1
+  עוד שירי משחק               b  found   28 -> kept   7   scratches  6/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   25 -> kept   6   scratches  7/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   33 -> kept  18   scratches  6/13  ->  3
+  ציפי שביט והדרדסים          a  found   25 -> kept   7   scratches 11/20  ->  3
+  ציפי שביט והדרדסים          b  found   34 -> kept   7   scratches  6/11  ->  1
+  ציפיטפוט                    a  found   32 -> kept   6   scratches  8/12  ->  0
+  ציפיטפוט                    b  found   29 -> kept  10   scratches  3/5   ->  2
 
 
 level 4_loose   {'PCT_STRONG': 98.0, 'PCT_WEAK': 96.8, 'THR_FLOOR': 13}
-  alignment ok on 18 of 19 sides
+  alignment ok on 52 of 55 sides
   baldi_olier                 a  found   30 -> kept   4   scratches  4/5   ->  1
   baldi_olier                 b  found   37 -> kept   8   scratches  0/0   ->  0
   dianyland                   a  found   39 -> kept  12   scratches  1/4   ->  1
@@ -133,10 +241,46 @@ level 4_loose   {'PCT_STRONG': 98.0, 'PCT_WEAK': 96.8, 'THR_FLOOR': 13}
   rega_im_dodli               b  found   25 -> kept   7   scratches  2/3   ->  1
   shirim_bezvaaim_tiviim      a  found   42 -> kept  15   scratches  4/7   ->  1
   shirim_bezvaaim_tiviim      b  found   44 -> kept   0   scratches  6/9   ->  0
+  shlishiat_hamaapil          a  found   45 -> kept  12   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   46 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   47 -> kept  16   scratches  2/4   ->  1
+  shok_hameziot               a  found   46 -> kept   8   scratches  1/1   ->  1
+  shok_hameziot               b  found   29 -> kept   6   scratches  0/1   ->  0
+  sipur_musicali_leyeladim    a  found   34 -> kept   6   scratches  5/6   ->  3
+  sipur_musicali_leyeladim    b  found   33 -> kept  11   scratches  3/3   ->  1
+  the_kameri                  a  found   42 -> kept   8   scratches  0/0   ->  0
+  the_kameri                  b  found   55 -> kept  14   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   44 -> kept  16   scratches  3/7   ->  1
+  tizmoret_zahal              b  found   48 -> kept  21   scratches  5/5   ->  3
+  yafa_yarkobi                a  found   34 -> kept   9   scratches  2/3   ->  1
+  yafa_yarkobi                b  found   42 -> kept  11   scratches  4/5   ->  1
+  yerushalam_shel_zahav       a  found   38 -> kept  10   scratches  1/1   ->  1
+  yerushalam_shel_zahav       b  found   26 -> kept   4   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   30 -> kept   3   scratches  8/8   ->  2
+  zaz_vezaza                  b  found   55 -> kept  17   scratches  5/6   ->  0
+  אנו עולים ושרים             a  found   35 -> kept   6   scratches  4/4   ->  1
+  אנו עולים ושרים             b  found   43 -> kept   9   scratches 11/14  ->  4
+  הגשש החיוור                 a  found   36 -> kept   0   scratches  2/3   ->  0
+  הד ארצי                     a  found   43 -> kept   7   scratches  5/5   ->  4
+  הד ארצי                     b  found   41 -> kept  13   scratches  1/2   ->  0
+  הד ארצי - נורית             a  found   45 -> kept  15   scratches 13/21  ->  8
+  הד ארצי - נורית             b  found   33 -> kept   6   scratches  5/6   ->  1
+  הצברים שלנו                 a  found   37 -> kept   2   scratches  3/8   ->  0
+  הצברים שלנו                 b  found   51 -> kept  15   scratches  3/3   ->  1
+  מצעד הכוכבים                b  found   24 -> kept   5   scratches  6/6   ->  4
+  סיפורי לילה טוב             a  found   44 -> kept  12   scratches  9/11  ->  5
+  סיפורי לילה טוב             b  found   41 -> kept   6   scratches  1/5   ->  0
+  עוד שירי משחק               b  found   35 -> kept   9   scratches  4/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   36 -> kept  12   scratches  8/14  ->  6
+  פסטיבל שירי ילדים 3         b  found   39 -> kept  20   scratches  6/13  ->  3
+  ציפי שביט והדרדסים          a  found   41 -> kept  16   scratches 12/20  ->  6
+  ציפי שביט והדרדסים          b  found   43 -> kept  13   scratches  7/11  ->  0
+  ציפיטפוט                    a  found   44 -> kept   9   scratches  8/12  ->  3
+  ציפיטפוט                    b  found   38 -> kept  17   scratches  3/5   ->  2
 
 
 level 5_loosest   {'PCT_STRONG': 97.0, 'PCT_WEAK': 95.5, 'THR_FLOOR': 10}
-  alignment ok on 18 of 19 sides
+  alignment ok on 52 of 55 sides
   baldi_olier                 a  found   43 -> kept  10   scratches  4/5   ->  2
   baldi_olier                 b  found   44 -> kept  14   scratches  0/0   ->  0
   dianyland                   a  found   51 -> kept  16   scratches  1/4   ->  1
@@ -156,3 +300,39 @@ level 5_loosest   {'PCT_STRONG': 97.0, 'PCT_WEAK': 95.5, 'THR_FLOOR': 10}
   rega_im_dodli               b  found   31 -> kept   6   scratches  3/3   ->  1
   shirim_bezvaaim_tiviim      a  found   60 -> kept  23   scratches  5/7   ->  2
   shirim_bezvaaim_tiviim      b  found   70 -> kept   0   scratches  7/9   ->  0
+  shlishiat_hamaapil          a  found   62 -> kept  17   scratches  0/0   ->  0
+  shlishiiat_hamapil          a  found   63 -> kept   0   scratches  0/0   ->  0
+  shlishiiat_hamapil          b  found   52 -> kept  16   scratches  2/4   ->  0
+  shok_hameziot               a  found   55 -> kept   8   scratches  1/1   ->  0
+  shok_hameziot               b  found   49 -> kept  11   scratches  1/1   ->  0
+  sipur_musicali_leyeladim    a  found   47 -> kept   7   scratches  4/6   ->  1
+  sipur_musicali_leyeladim    b  found   44 -> kept  12   scratches  3/3   ->  1
+  the_kameri                  a  found   51 -> kept   8   scratches  0/0   ->  0
+  the_kameri                  b  found   61 -> kept  15   scratches  0/0   ->  0
+  tizmoret_zahal              a  found   66 -> kept  30   scratches  4/7   ->  1
+  tizmoret_zahal              b  found   67 -> kept  29   scratches  5/5   ->  3
+  yafa_yarkobi                a  found   47 -> kept   8   scratches  2/3   ->  1
+  yafa_yarkobi                b  found   47 -> kept  17   scratches  4/5   ->  0
+  yerushalam_shel_zahav       a  found   48 -> kept  11   scratches  1/1   ->  1
+  yerushalam_shel_zahav       b  found   33 -> kept   3   scratches  1/1   ->  0
+  zaz_vezaza                  a  found   43 -> kept   8   scratches  8/8   ->  0
+  zaz_vezaza                  b  found   84 -> kept  29   scratches  5/6   ->  2
+  אנו עולים ושרים             a  found   58 -> kept  12   scratches  4/4   ->  2
+  אנו עולים ושרים             b  found   63 -> kept  14   scratches 12/14  ->  2
+  הגשש החיוור                 a  found   53 -> kept   0   scratches  3/3   ->  0
+  הד ארצי                     a  found   67 -> kept  10   scratches  5/5   ->  1
+  הד ארצי                     b  found   58 -> kept  18   scratches  2/2   ->  0
+  הד ארצי - נורית             a  found   76 -> kept  21   scratches 14/21  ->  6
+  הד ארצי - נורית             b  found   47 -> kept   8   scratches  5/6   ->  1
+  הצברים שלנו                 a  found   52 -> kept   2   scratches  3/8   ->  0
+  הצברים שלנו                 b  found   63 -> kept  18   scratches  3/3   ->  1
+  מצעד הכוכבים                b  found   31 -> kept   9   scratches  6/6   ->  4
+  סיפורי לילה טוב             a  found   59 -> kept  14   scratches 11/11  ->  4
+  סיפורי לילה טוב             b  found   45 -> kept   7   scratches  3/5   ->  0
+  עוד שירי משחק               b  found   44 -> kept  10   scratches  4/7   ->  1
+  פסטיבל שירי ילדים 3         a  found   58 -> kept  17   scratches  9/14  ->  5
+  פסטיבל שירי ילדים 3         b  found   54 -> kept  19   scratches  6/13  ->  4
+  ציפי שביט והדרדסים          a  found   52 -> kept  22   scratches 11/20  ->  5
+  ציפי שביט והדרדסים          b  found   71 -> kept  21   scratches  9/11  ->  3
+  ציפיטפוט                    a  found   58 -> kept  16   scratches 11/12  ->  2
+  ציפיטפוט                    b  found   55 -> kept  15   scratches  3/5   ->  0
