@@ -150,12 +150,26 @@ def combined(ma, mb, delta):
     return np.minimum(ma, np.roll(mb, cols, axis=1))
 
 
+STATUS_OK = "ok"
+STATUS_NOT_ALIGNED = "alignment_failed"
+
+
 def analyse_side(photo_a, photo_b):
     """One side of a record, from two photographs of it.
 
-    Returns the detection mask in the FIRST photograph's frame, plus what the
-    alignment did, so a side that could not be aligned can be told apart from
-    one that is clean.
+    Every mark this model reports was seen in BOTH photographs, so if the two
+    cannot be lined up there is nothing to report -- not "no damage found", which
+    is what an empty result would otherwise be taken to mean. A record covered in
+    scratches would come back graded perfect, and a buyer would pay for it.
+
+    So a side that cannot be aligned comes back with status
+    "alignment_failed", no marks, no grade, and the photographs unmarked. It is
+    the one outcome the caller must not treat as a clean record: the right thing
+    to show is that the two shots could not be matched and to ask for them again.
+
+    It is rare -- 3 of 55 calibration sides, none of 22 validation sides -- and
+    it happens when the disc is too clean to lock onto or the two shots lit
+    different parts of it, so re-shooting genuinely tends to fix it.
     """
     keep = {k: P[k] for k in list(RULES_OFF) + list(THRESHOLDS)}
     P.update(RULES_OFF)
@@ -164,11 +178,13 @@ def analyse_side(photo_a, photo_b):
         a, b = maps_of(photo_a), maps_of(photo_b)
         delta, ratio, how = align(a, b)
         if delta is None:
-            # Nothing to intersect with. Falling back to one photograph would
-            # report marks this model has no second opinion on, so the side is
-            # returned unjudged and the caller decides what to say about it.
-            return {"aligned": False, "how": how, "confidence": ratio,
+            return {"status": STATUS_NOT_ALIGNED, "aligned": False,
+                    "how": how, "confidence": ratio,
+                    # deliberately empty, and deliberately NOT a grade: the
+                    # photographs go back unmarked and the side is not judged
                     "mask": np.zeros(a["shape"], np.uint8), "marks": 0,
+                    "message": ("the two photos of this side could not be "
+                                "matched to each other — please take them again"),
                     "img": a["img"], "center": a["center"], "radius": a["radius"]}
 
         rad = combined(a["radial"], b["radial"], delta)
@@ -182,11 +198,35 @@ def analyse_side(photo_a, photo_b):
             (det > 127).astype(np.uint8), connectivity=8)
         big = [i for i in range(1, n) if stats[i][4] >= 40]
         det = (np.isin(lab, big).astype(np.uint8) * 255) if big else det * 0
-        return {"aligned": True, "how": how, "confidence": ratio,
-                "rotation": delta, "mask": det, "marks": len(big),
+        return {"status": STATUS_OK, "aligned": True, "how": how,
+                "confidence": ratio, "rotation": delta, "mask": det,
+                "marks": len(big), "message": "",
                 "img": a["img"], "center": a["center"], "radius": a["radius"]}
     finally:
         P.update(keep)
+
+
+def analyse_record(sides):
+    """A whole record from its two sides, each given as a pair of photographs.
+
+    A side that could not be aligned takes the whole record with it. Grading the
+    other side alone and calling that the record's condition would be answering
+    a question we did not manage to ask: the unaligned side might be the damaged
+    one, and the buyer is the person who finds out. So the record comes back
+    needing to be photographed again, naming the side at fault.
+    """
+    out = {name: analyse_side(*shots) for name, shots in sides.items()}
+    failed = [name for name, r in out.items() if r["status"] != STATUS_OK]
+    if failed:
+        return {"status": STATUS_NOT_ALIGNED, "sides": out,
+                "sides_to_retake": failed,
+                "message": ("side " + " and ".join(failed) + ": the two photos "
+                            "could not be matched to each other — please "
+                            "photograph " +
+                            ("that side" if len(failed) == 1 else "those sides")
+                            + " again")}
+    return {"status": STATUS_OK, "sides": out, "sides_to_retake": [],
+            "message": ""}
 
 
 def main():
