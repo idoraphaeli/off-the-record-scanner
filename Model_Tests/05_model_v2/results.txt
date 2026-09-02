@@ -1,0 +1,83 @@
+Run MODEL v2 over the calibration records: numbers, and pictures to look at.
+
+Every side is analysed twice -- once by the model that is on the server today,
+once by the new one -- from the same two photographs, so the two can be read
+against each other rather than against remembered figures.
+
+The threshold is swept underneath the new model, because the combination it now
+runs on changes what a given threshold means: intersecting two maps lowers every
+value, so the bar that suited a single shot is no longer the same bar. What is
+being looked for is where recall is still climbing.
+
+The pictures are painted exactly as the server paints them -- the same soft
+yellow, the same halo, the same clip at the edge of the playing surface -- so
+what the gallery shows is what the app would show.
+
+Usage:  python run_model_v2.py [how many records]
+
+
+model                     marks/photo   recall   scratches found  sides with none
+----------------------------------------------------------------------------------
+on the server today              14.8    46.5%        148 of 318                -
+model v2, a_current_bar          15.3    41.5%        132 of 318                2
+model v2, b_open                 24.4    47.8%        152 of 318                2
+model v2, c_wide                 37.9    58.2%        185 of 318                2
+model v2, d_loose                60.0    69.2%        220 of 318                2
+
+alignment: {'maps': 52, 'none': 2, 'label': 1}
+
+  baldi_olier                 a  server  2/5     new  3/5    marks  36  by the maps
+  baldi_olier                 b  server  0/0     new  0/0    marks  30  by the maps
+  dianyland                   a  server  1/4     new  1/4    marks  50  by the maps
+  dianyland                   b  server  2/5     new  1/5    marks  37  by the maps
+  festival_shiri_9            a  server  2/3     new  3/3    marks  48  by the maps
+  festival_shiri_9            b  server  2/3     new  3/3    marks  37  by the maps
+  gvirti_hanaava2             a  server  0/2     new  0/2    marks  57  by the maps
+  gvirti_hanaava2             b  server  1/2     new  2/2    marks  40  by the maps
+  haloh_halha_hahevraia       a  server  0/0     new  0/0    marks  35  by the maps
+  haloh_halha_hahevraia       b  server  0/3     new  2/3    marks  35  by the maps
+  hio_laylot                  a  server  0/3     new  1/3    marks  52  by the maps
+  hio_laylot                  b  server  1/2     new  2/2    marks  49  by the maps
+  masotav_hamoflaaim          a  server  9/14    new  9/14   marks  33  by the maps
+  masotav_hamoflaaim          b  server  2/7     new  4/7    marks  36  by the maps
+  pierre_et_le_loup           b  server  3/19    new  3/19   marks  34  by the maps
+  rega_im_dodli               a  server  2/6     new  3/6    marks  26  by the maps
+  rega_im_dodli               b  server  0/3     new  3/3    marks  32  by the maps
+  shirim_bezvaaim_tiviim      a  server  3/7     new  4/7    marks  38  by the maps
+  shirim_bezvaaim_tiviim      b  server  6/9     new  7/9    marks  30  by the maps
+  shlishiat_hamaapil          a  server  0/0     new  0/0    marks  41  by the maps
+  shlishiiat_hamapil          a  server  0/0     new  0/0    marks   0  by the none
+  shlishiiat_hamapil          b  server  2/4     new  2/4    marks  34  by the maps
+  shok_hameziot               a  server  1/1     new  1/1    marks  48  by the maps
+  shok_hameziot               b  server  1/1     new  1/1    marks  36  by the maps
+  sipur_musicali_leyeladim    a  server  2/6     new  5/6    marks  31  by the maps
+  sipur_musicali_leyeladim    b  server  2/3     new  2/3    marks  47  by the maps
+  the_kameri                  a  server  0/0     new  0/0    marks  32  by the maps
+  the_kameri                  b  server  0/0     new  0/0    marks  30  by the maps
+  tizmoret_zahal              a  server  2/7     new  5/7    marks  45  by the maps
+  tizmoret_zahal              b  server  2/5     new  3/5    marks  51  by the maps
+  yafa_yarkobi                a  server  2/3     new  1/3    marks  31  by the maps
+  yafa_yarkobi                b  server  1/5     new  3/5    marks  41  by the maps
+  yerushalam_shel_zahav       a  server  0/1     new  1/1    marks  41  by the maps
+  yerushalam_shel_zahav       b  server  1/1     new  1/1    marks  35  by the label
+  zaz_vezaza                  a  server  6/8     new  4/8    marks  32  by the maps
+  zaz_vezaza                  b  server  2/6     new  2/6    marks  33  by the maps
+  אנו עולים ושרים             a  server  3/4     new  4/4    marks  41  by the maps
+  אנו עולים ושרים             b  server  9/14    new 11/14   marks  43  by the maps
+  הגשש החיוור                 a  server  2/3     new  0/3    marks   0  by the none
+  הד ארצי                     a  server  4/5     new  3/5    marks  33  by the maps
+  הד ארצי                     b  server  2/2     new  1/2    marks  34  by the maps
+  הד ארצי - נורית             a  server 11/21    new  9/21   marks  56  by the maps
+  הד ארצי - נורית             b  server  5/6     new  4/6    marks  34  by the maps
+  הצברים שלנו                 a  server  1/8     new  5/8    marks  31  by the maps
+  הצברים שלנו                 b  server  3/3     new  3/3    marks  48  by the maps
+  מצעד הכוכבים                b  server  3/6     new  5/6    marks  41  by the maps
+  סיפורי לילה טוב             a  server  7/11    new 10/11   marks  54  by the maps
+  סיפורי לילה טוב             b  server  3/5     new  2/5    marks  40  by the maps
+  עוד שירי משחק               b  server  5/7     new  2/7    marks  43  by the maps
+  פסטיבל שירי ילדים 3         a  server  6/14    new  8/14   marks  37  by the maps
+  פסטיבל שירי ילדים 3         b  server  3/13    new 10/13   marks  47  by the maps
+  ציפי שביט והדרדסים          a  server  8/20    new  7/20   marks  24  by the maps
+  ציפי שביט והדרדסים          b  server  3/11    new  8/11   marks  51  by the maps
+  ציפיטפוט                    a  server  7/12    new  8/12   marks  36  by the maps
+  ציפיטפוט                    b  server  3/5     new  3/5    marks  48  by the maps

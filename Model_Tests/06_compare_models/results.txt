@@ -1,0 +1,32 @@
+Every model we have, on the same sides, scored the same way.
+
+The question this exists to answer is Ido's and it is about FALSE MARKS: does
+demanding that a mark be present in BOTH shots put fewer wrong things in front
+of the user. Every run so far reported recall and how many marks were painted,
+which cannot answer that.
+
+Three numbers per model, all from the pen marks, so no new hand labelling is
+needed and every model is judged by the same rule:
+
+  recall        of the scratches drawn in pen, how many were found
+  precision     of the marks painted, how many sit on a drawn scratch. DIRT
+                COUNTS AS WRONG here, so every figure reads far below the ones
+                quoted from the hand labels -- but it reads low for all of them
+                equally, which is what makes them comparable.
+  clean photos  marks painted on photographs with NO pen marks at all. Those
+                records were judged undamaged by eye, so everything painted
+                there is dirt or nothing. It is the closest thing to a direct
+                count of what the user should not be seeing.
+
+Usage:  python compare_models.py [how many records]
+
+
+model                               marks/photo   recall   precision   marks on a clean record
+-----------------------------------------------------------------------------------------------
+1 on the server today                      14.8    46.5%         16%                      14.8
+2 server, three rules off                  30.0    59.1%          9%                      28.3
+3 both shots, bar as it ships              15.3    41.5%         14%                       9.2
+4 both shots, bar opened                   24.4    47.8%          9%                      16.7
+5 both shots, bar wide                     37.9    58.2%          7%                      28.0
+6 both shots, rules KEPT ON                 9.6    33.6%         19%                       5.5
+7 both shots, rules KEPT, opened           14.6    37.1%         14%                      10.7
