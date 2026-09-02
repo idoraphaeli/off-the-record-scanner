@@ -1,0 +1,48 @@
+Recall and precision for every model, both scored the way we normally quote.
+
+The last comparison scored precision against the pen marks, which were drawn on
+scratches only, so dirt came out as a mistake and every model read around 15%.
+That is fine for ranking models against each other and useless for saying what
+any one of them is worth, because it is not the rule we grade by -- a dirty
+record really is in worse condition and the scanner is meant to say so.
+
+So precision here counts dirt as a correct call, exactly as the 75.9% quoted for
+the model on the server does. Each mark is placed in one of three boxes:
+
+    on a pen mark   correct by construction, and never shown for labelling
+    hand-labelled   matched by position to a verdict already given
+    unjudged        this model found it and nobody has ever looked at it
+
+The first two make the figure and the third is reported beside it, because a
+model that opens the detector up invents marks nobody has judged, and a
+precision computed on half the evidence has to say so.
+
+Usage:  python compare_precision.py [how many records]
+
+
+model                                      marks   recall   PRECISION  unjudged  on a clean record
+---------------------------------------------------------------------------------------------------
+1  on the server today                      14.8    46.5%       86.6%       33%               14.8
+2  server, three rules off                  30.0    59.1%       76.1%       53%               28.3
+v2 both shots, rules on, bar as ships        9.6    33.6%       95.2%       40%                5.5
+v2 both shots, rules on, bar opened         14.6    37.1%       94.3%       51%               10.7
+v2 both shots, rules off, bar as ships      15.3    41.5%       89.1%       49%                9.2
+v2 both shots, rules off, bar wide          37.9    58.2%       85.0%       68%               28.0
+
+1  on the server today
+  on a pen mark 138, scratch 14, dirt 306, false 71, unsure 20, unjudged 265
+
+2  server, three rules off
+  on a pen mark 176, scratch 18, dirt 375, false 179, unsure 35, unjudged 869
+
+v2 both shots, rules on, bar as ships
+  on a pen mark 103, scratch 5, dirt 190, false 15, unsure 5, unjudged 210
+
+v2 both shots, rules on, bar opened
+  on a pen mark 115, scratch 7, dirt 240, false 22, unsure 11, unjudged 407
+
+v2 both shots, rules off, bar as ships
+  on a pen mark 123, scratch 10, dirt 235, false 45, unsure 15, unjudged 415
+
+v2 both shots, rules off, bar wide
+  on a pen mark 186, scratch 19, dirt 335, false 95, unsure 31, unjudged 1418
