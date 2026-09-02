@@ -1,0 +1,31 @@
+TEST 1, second half -- precision of the confirmed set, with dirt counted as
+a correct call.
+
+The sweep scored precision against the pen marks, which were drawn on scratches
+only, so dirt came out as a mistake and the numbers read far below the ones we
+normally quote. That is not the rule we grade by: a dirty record really is in
+worse condition and the scanner is meant to say so.
+
+The obstacle is that the hand labels describe the detections the CURRENT
+thresholds produce. A looser level invents detections nobody has judged. So each
+confirmed detection is placed in one of three boxes:
+
+    on a pen mark   correct by construction, and never shown for labelling
+    hand-labelled   matched by position to a verdict you gave: scratch/dirt/false
+    unjudged        new at this level, and honestly unknown
+
+Precision is computed over the first two and the third is reported beside it, so
+it is visible how much of the answer rests on detections nobody has looked at.
+That share grows as the gates open, which is exactly the caveat that has to
+travel with the number.
+
+Usage:  python test_01_precision_with_dirt.py [how many records]
+
+
+level         confirmed  on a mark  scratch   dirt  false  unsure  unjudged   PRECISION  scratch only
+------------------------------------------------------------------------------------------------------
+1_current            72         10        1     52      1       1         7       98.4%         17.2%
+2_open               95         10        3     69      1       0        12       98.8%         15.7%
+3_wide              142         15        6     94      2       3        22       98.3%         17.9%
+4_loose             184         20       11    140      7       6         0       96.1%         17.4%
+5_loosest           241         24        6    110      1       4        96       99.3%         21.3%

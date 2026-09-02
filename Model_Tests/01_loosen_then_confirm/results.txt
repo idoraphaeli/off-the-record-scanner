@@ -1,0 +1,158 @@
+TEST 1 -- open the detector up and let the cross-shot check do the filtering.
+
+The thresholds today are set so that a SINGLE photograph is already fairly
+clean. That is the wrong place to spend them if a strong filter sits downstream:
+a detection confirmed in both shots of a side is right 98% of the time against
+78% for one seen once. The two-stage arrangement -- propose generously, verify
+strictly -- should beat one careful stage.
+
+There is a specific reason to expect the number of CONFIRMATIONS to rise rather
+than fall. A real scratch that is caught in shot 1 and missed in shot 2 is
+missed because it fell just under the threshold; lower the threshold and shot 2
+catches it too, and the mark turns from "seen once" into "seen twice". A false
+detection gains nothing that way: it appears in each shot independently and only
+pairs up by landing in the same place by accident.
+
+That accident scales with the size of the match window, which the alignment fix
+just cut from +/-6 degrees to +/-2. So real marks pair up systematically while
+coincidences got three times rarer -- which is why this is worth trying now and
+was not before.
+
+The thing to watch is that false detections per photo grow much faster than real
+ones as the gates open, and coincidental pairs grow with the PRODUCT of the two
+counts. True confirmations rise linearly at best, false ones quadratically, so
+there is a sweet spot and then a collapse. That is why this sweeps a curve
+instead of trying one setting.
+
+Precision here is measured against the pen marks, which were drawn on scratches
+only -- so DIRT COUNTS AS A MISTAKE in these numbers and they read lower than
+the hand-labelled figures quoted elsewhere. It has to be this way: the hand
+labels cover the detections the current thresholds produce, and a looser level
+invents detections nobody has ever judged. What matters here is that all five
+levels are scored by the same rule, so they can be compared to each other.
+
+Usage:  python test_01_loosen_then_confirm.py [how many records]
+
+
+level         per photo  confirmed   recall  after gate   prec  after   scratches kept
+--------------------------------------------------------------------------------------
+1_current          13.7        3.8    37.1%       10.3%    12%    12%         10 of 97
+2_open             20.6        5.0    49.5%       10.3%    10%    11%         10 of 97
+3_wide             28.5        7.5    48.5%       16.5%     8%    10%         16 of 97
+4_loose            39.5        9.7    53.6%       19.6%     6%     9%         19 of 97
+5_loosest          54.3       12.7    67.0%       26.8%     6%     6%         26 of 97
+
+
+level 1_current   {'PCT_STRONG': 99.3, 'PCT_WEAK': 98.7, 'THR_FLOOR': 25}
+  alignment ok on 18 of 19 sides
+  baldi_olier                 a  found   10 -> kept   3   scratches  2/5   ->  1
+  baldi_olier                 b  found   15 -> kept   5   scratches  0/0   ->  0
+  dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
+  dianyland                   b  found   10 -> kept   5   scratches  2/5   ->  1
+  festival_shiri_9            a  found   16 -> kept   5   scratches  2/3   ->  2
+  festival_shiri_9            b  found   11 -> kept   4   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   16 -> kept   8   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   12 -> kept   7   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   16 -> kept   3   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   12 -> kept   0   scratches  0/3   ->  0
+  hio_laylot                  a  found   18 -> kept   6   scratches  0/3   ->  0
+  hio_laylot                  b  found   21 -> kept   7   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   19 -> kept   0   scratches  9/14  ->  0
+  masotav_hamoflaaim          b  found   13 -> kept   0   scratches  2/7   ->  0
+  pierre_et_le_loup           b  found   16 -> kept   5   scratches  3/19  ->  1
+  rega_im_dodli               a  found    7 -> kept   0   scratches  2/6   ->  0
+  rega_im_dodli               b  found    3 -> kept   2   scratches  0/3   ->  0
+  shirim_bezvaaim_tiviim      a  found   12 -> kept   7   scratches  3/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+
+
+level 2_open   {'PCT_STRONG': 99.0, 'PCT_WEAK': 98.2, 'THR_FLOOR': 21}
+  alignment ok on 18 of 19 sides
+  baldi_olier                 a  found   14 -> kept   3   scratches  4/5   ->  1
+  baldi_olier                 b  found   16 -> kept   5   scratches  0/0   ->  0
+  dianyland                   a  found   18 -> kept   4   scratches  1/4   ->  0
+  dianyland                   b  found   16 -> kept   7   scratches  2/5   ->  2
+  festival_shiri_9            a  found   23 -> kept   6   scratches  2/3   ->  2
+  festival_shiri_9            b  found   18 -> kept   4   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   17 -> kept   7   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   21 -> kept   6   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   24 -> kept   7   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   22 -> kept   4   scratches  1/3   ->  0
+  hio_laylot                  a  found   22 -> kept   8   scratches  0/3   ->  0
+  hio_laylot                  b  found   34 -> kept  15   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   29 -> kept   3   scratches  9/14  ->  1
+  masotav_hamoflaaim          b  found   26 -> kept   0   scratches  3/7   ->  0
+  pierre_et_le_loup           b  found   15 -> kept   5   scratches  4/19  ->  1
+  rega_im_dodli               a  found   12 -> kept   0   scratches  4/6   ->  0
+  rega_im_dodli               b  found   12 -> kept   3   scratches  1/3   ->  0
+  shirim_bezvaaim_tiviim      a  found   25 -> kept   8   scratches  5/7   ->  0
+  shirim_bezvaaim_tiviim      b  found   28 -> kept   0   scratches  8/9   ->  0
+
+
+level 3_wide   {'PCT_STRONG': 98.6, 'PCT_WEAK': 97.6, 'THR_FLOOR': 17}
+  alignment ok on 18 of 19 sides
+  baldi_olier                 a  found   25 -> kept   4   scratches  4/5   ->  1
+  baldi_olier                 b  found   26 -> kept   7   scratches  0/0   ->  0
+  dianyland                   a  found   31 -> kept  10   scratches  1/4   ->  1
+  dianyland                   b  found   24 -> kept   8   scratches  2/5   ->  2
+  festival_shiri_9            a  found   33 -> kept   6   scratches  3/3   ->  3
+  festival_shiri_9            b  found   27 -> kept   7   scratches  2/3   ->  2
+  gvirti_hanaava2             a  found   23 -> kept  11   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   27 -> kept  10   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   28 -> kept   8   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   30 -> kept   7   scratches  1/3   ->  0
+  hio_laylot                  a  found   30 -> kept  11   scratches  1/3   ->  1
+  hio_laylot                  b  found   40 -> kept  19   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   35 -> kept   6   scratches  7/14  ->  0
+  masotav_hamoflaaim          b  found   29 -> kept   0   scratches  2/7   ->  0
+  pierre_et_le_loup           b  found   25 -> kept   7   scratches  7/19  ->  2
+  rega_im_dodli               a  found   19 -> kept   0   scratches  3/6   ->  0
+  rega_im_dodli               b  found   21 -> kept   7   scratches  2/3   ->  1
+  shirim_bezvaaim_tiviim      a  found   36 -> kept  14   scratches  4/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   33 -> kept   0   scratches  6/9   ->  0
+
+
+level 4_loose   {'PCT_STRONG': 98.0, 'PCT_WEAK': 96.8, 'THR_FLOOR': 13}
+  alignment ok on 18 of 19 sides
+  baldi_olier                 a  found   30 -> kept   4   scratches  4/5   ->  1
+  baldi_olier                 b  found   37 -> kept   8   scratches  0/0   ->  0
+  dianyland                   a  found   39 -> kept  12   scratches  1/4   ->  1
+  dianyland                   b  found   31 -> kept   8   scratches  2/5   ->  2
+  festival_shiri_9            a  found   36 -> kept  12   scratches  3/3   ->  3
+  festival_shiri_9            b  found   39 -> kept   8   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   26 -> kept   9   scratches  2/2   ->  2
+  gvirti_hanaava2             b  found   45 -> kept  15   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   41 -> kept  10   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   44 -> kept   8   scratches  1/3   ->  0
+  hio_laylot                  a  found   50 -> kept  15   scratches  1/3   ->  0
+  hio_laylot                  b  found   50 -> kept  24   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   56 -> kept  11   scratches  7/14  ->  1
+  masotav_hamoflaaim          b  found   48 -> kept   3   scratches  3/7   ->  0
+  pierre_et_le_loup           b  found   43 -> kept  11   scratches  8/19  ->  3
+  rega_im_dodli               a  found   25 -> kept   4   scratches  4/6   ->  1
+  rega_im_dodli               b  found   25 -> kept   7   scratches  2/3   ->  1
+  shirim_bezvaaim_tiviim      a  found   42 -> kept  15   scratches  4/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   44 -> kept   0   scratches  6/9   ->  0
+
+
+level 5_loosest   {'PCT_STRONG': 97.0, 'PCT_WEAK': 95.5, 'THR_FLOOR': 10}
+  alignment ok on 18 of 19 sides
+  baldi_olier                 a  found   43 -> kept  10   scratches  4/5   ->  2
+  baldi_olier                 b  found   44 -> kept  14   scratches  0/0   ->  0
+  dianyland                   a  found   51 -> kept  16   scratches  1/4   ->  1
+  dianyland                   b  found   42 -> kept   9   scratches  2/5   ->  2
+  festival_shiri_9            a  found   59 -> kept  14   scratches  3/3   ->  3
+  festival_shiri_9            b  found   48 -> kept   7   scratches  2/3   ->  2
+  gvirti_hanaava2             a  found   45 -> kept  13   scratches  2/2   ->  2
+  gvirti_hanaava2             b  found   55 -> kept  16   scratches  2/2   ->  2
+  haloh_halha_hahevraia       a  found   53 -> kept  14   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   54 -> kept  14   scratches  2/3   ->  0
+  hio_laylot                  a  found   73 -> kept  21   scratches  2/3   ->  0
+  hio_laylot                  b  found   68 -> kept  25   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   63 -> kept  13   scratches  9/14  ->  4
+  masotav_hamoflaaim          b  found   63 -> kept   3   scratches  5/7   ->  0
+  pierre_et_le_loup           b  found   67 -> kept  18   scratches 10/19  ->  4
+  rega_im_dodli               a  found   43 -> kept   5   scratches  5/6   ->  0
+  rega_im_dodli               b  found   31 -> kept   6   scratches  3/3   ->  1
+  shirim_bezvaaim_tiviim      a  found   60 -> kept  23   scratches  5/7   ->  2
+  shirim_bezvaaim_tiviim      b  found   70 -> kept   0   scratches  7/9   ->  0

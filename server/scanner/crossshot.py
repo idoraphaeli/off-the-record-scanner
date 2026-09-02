@@ -44,7 +44,27 @@ LABEL_MIN_RATIO = 4.0           # correlation peak over its own background
 BLUR_W = 60
 
 RAD_TOL = 0.025                 # radius agreement, as a fraction of disc radius
-ANG_TOL = 6.0                   # angular agreement once the rotation is known
+# Angular agreement once the rotation is known. Was 6 degrees, which at a typical
+# radius is well over a hundred pixels against a scratch about eight wide -- a
+# window that loose confirms marks that are merely near each other. It could not
+# be tightened before, because the label's angle was itself a couple of degrees
+# out and the window was silently paying for that. With the correction below in
+# place, 2 degrees confirms MORE marks than 6 did without it (314 against 148,
+# measured over calibration and validation) at 98% precision against 95%.
+ANG_TOL = 2.0
+# ...but only where the angle could actually be corrected. Correcting it needs a
+# handful of paired marks to fit on, and a side with too few gets the label's raw
+# angle back -- still a couple of degrees out, and a 2 degree window around a
+# wrong angle confirms nothing at all. Measured on one such side: 2 confirmed at
+# 6 degrees, 0 at 2. So the old window is kept exactly where the correction could
+# not run, which makes this change no worse than before on any side and better on
+# the ones that can be corrected.
+ANG_TOL_UNCORRECTED = 6.0
+
+# Correcting the label's angle from the marks themselves.
+SEARCH_W = 8.0        # how far out a pair may sit while the angle is still wrong
+MIN_PAIRS = 4         # below this the median is one outlier from meaningless
+REFINE_ROUNDS = 4
 
 
 def label_profile(gray, center, radius):
@@ -103,12 +123,69 @@ def rotation_from_label(pa, pb):
     return (k * 360.0 / corr.size) % 360.0, ratio
 
 
-def confirm(marks, others, delta):
+def _offsets(marks, others, delta, window):
+    """For each mark, how far its nearest partner sits from where this rotation
+    says it should be. A mark with no partner inside the window says nothing."""
+    out = []
+    for m in marks:
+        want = (m["angle_deg"] + delta) % 360.0
+        best = None
+        for o in others:
+            if abs(m["radius_frac"] - o["radius_frac"]) > RAD_TOL:
+                continue
+            d = (o["angle_deg"] - want + 180.0) % 360.0 - 180.0
+            if abs(d) <= window and (best is None or abs(d) < abs(best)):
+                best = d
+        out.append(best)
+    return out
+
+
+def refine_rotation(marks, others, delta):
+    """The label's angle, corrected by the offset its own pairs still show.
+
+    Unwrapping both shots and drawing them into one strip showed matched pairs
+    sitting SIDE BY SIDE rather than on top of each other, by a median of 2.4
+    degrees -- and by the same amount for every pair on a side, which is the
+    signature of a wrong angle rather than of pairs that do not belong together.
+    Measured across 51 sides, the correction moves the angle a median of 2.8
+    degrees while the pairs stay within 0.75 degrees of each other, so they are
+    plainly moving together.
+
+    A MEDIAN is used rather than a mean because most marks have no true partner,
+    and the ones that pair up by accident sit anywhere; a mean would let them
+    drag the correction. The starting angle comes from the label rather than from
+    the marks, so this cannot manufacture agreement out of nothing -- it can only
+    remove a bias that is already common to the pairs.
+
+    Returns (angle, how far it moved, the spread of the pairs around it, how many
+    pairs it was fitted on). Spread is None when there were too few pairs to fit,
+    in which case the label's own angle is handed back unchanged.
+    """
+    start, res = delta, []
+    for _ in range(REFINE_ROUNDS):
+        res = [d for d in _offsets(marks, others, delta, SEARCH_W) if d is not None]
+        if len(res) < MIN_PAIRS:
+            return start, 0.0, None, 0
+        step = float(np.median(res))
+        delta = (delta + step) % 360.0
+        if abs(step) < 0.05:
+            break
+    spread = float(np.median(np.abs(np.array(res) - np.median(res))))
+    moved = (delta - start + 180.0) % 360.0 - 180.0
+    return delta, moved, spread, len(res)
+
+
+def confirm(marks, others, delta, window=None):
     """Which of `marks` also appear in `others`, once the rotation is undone.
 
     Both lists carry disc coordinates (`radius_frac`, `angle_deg`), so a match
     means the same place on the RECORD — not the same place in a photograph.
+
+    `window` is how much angular disagreement is still a match; it is passed in
+    rather than fixed here because how tight it may be depends on whether the
+    angle was corrected for this side.
     """
+    window = ANG_TOL if window is None else window
     flags = []
     for m in marks:
         want = (m["angle_deg"] + delta) % 360.0
@@ -116,7 +193,7 @@ def confirm(marks, others, delta):
         for o in others:
             if abs(m["radius_frac"] - o["radius_frac"]) > RAD_TOL:
                 continue
-            if abs((o["angle_deg"] - want + 180.0) % 360.0 - 180.0) <= ANG_TOL:
+            if abs((o["angle_deg"] - want + 180.0) % 360.0 - 180.0) <= window:
                 hit = True
                 break
         flags.append(hit)

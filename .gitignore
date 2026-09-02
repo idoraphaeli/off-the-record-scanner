@@ -30,6 +30,18 @@ Model_Labels/
 Model_Overlay/
 Model_Scratch_Painted/
 Model_OnMark_Check/
+Model_ConfirmedOnly/
+Model_CrossShot_Sheets/
+Model_CrossShot_Strips/
+Model_FilterCompare/
+Model_TrackGaps/
+
+# One folder per experiment, each holding the photographs it painted and the
+# measurements it took. The images are regenerable by rerunning the script; the
+# measurements are the finding, cost hours of compute and hand-labelling, and
+# are a few kilobytes. So the pictures are skipped and the numbers are kept.
+Model_Tests/*/*
+!Model_Tests/*/*.txt
 
 # Experiment outputs: regenerable from the scripts, too heavy for the repo.
 # results_v2/ is kept (it is the deliverable people actually look at).

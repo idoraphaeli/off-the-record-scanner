@@ -1,0 +1,184 @@
+TEST 3 -- combine the two shots BEFORE the threshold, not after it.
+
+The detector does not produce marks directly. It produces a response map -- a
+number per pixel saying how scratch-like that spot is -- and only then a
+threshold turns it into marks. Today each shot is thresholded on its own and the
+surviving marks are matched afterwards, which means a faint scratch answering 20
+in both shots against a threshold of 25 is thrown away twice, even though two
+independent measurements agreed on it exactly.
+
+So the combination is moved to before the decision. The two response maps are
+brought into the same frame using the rotation read off the label, and the
+pixelwise MINIMUM is taken. Minimum is a soft AND: it demands presence in both
+shots without demanding strength in either.
+
+    a scratch      20 and 20  ->  20, and it survives a lower threshold
+    a reflection   60 and 3   ->  3, dead, because the lamp moved with the disc
+
+That is the whole argument for lowering the threshold afterwards: the bar was
+high to keep reflections out, and the combination has already removed them.
+
+Two details decide whether it works.
+
+ALIGNMENT. The angle is good to about 0.75 degrees, which at a typical radius is
+around ten pixels -- the width of a scratch. A strict pixel-to-pixel minimum
+would therefore pair a scratch with the vinyl beside it and score it zero. So the
+second map is dilated first: the question asked is not "is it at exactly this
+pixel" but "is there support within a few pixels of here".
+
+MASKED AREAS. A zero in a map means the area was unjudgeable -- blown out by
+glare, or too dark. Under a strict minimum, anything unjudgeable in EITHER shot
+becomes unjudgeable in the result, so coverage becomes the intersection of the
+two rather than their union. The lenient variant keeps the first shot's own
+answer where the second has nothing to say, and both are measured here, along
+with how much of the disc each one can still judge.
+
+Usage:  python test_03_combine_before_threshold.py [how many records]
+
+
+config                      per photo   recall   scratches      aligned  not aligned  PRECISION  unjudged
+---------------------------------------------------------------------------------------------------------
+1_baseline                       13.7    37.1%    36 of 97     36.1%        40.0%       90.7%        71
+2_combined_same_thr               9.2    25.8%    25 of 97     23.6%        32.0%       97.6%        48
+3_combined_open                  15.0    32.0%    31 of 97     26.4%        48.0%       97.0%       111
+4_combined_wide                  21.3    33.0%    32 of 97     29.2%        44.0%       94.4%       195
+5_combined_loose                 34.1    42.3%    41 of 97     40.3%        48.0%       93.1%       401
+6_combined_wide_lenient          21.6    32.0%    31 of 97     27.8%        44.0%       93.9%       200
+
+
+config 1_baseline   {'PCT_STRONG': 99.3, 'PCT_WEAK': 98.7, 'THR_FLOOR': 25}   lenient=False
+  33 on a pen mark, 4 scratch, 129 dirt, 17 false, 71 unjudged
+  baldi_olier                 a  shown   10   scratches  2/5
+  baldi_olier                 b  shown   15   scratches  0/0
+  dianyland                   a  shown   11   scratches  1/4
+  dianyland                   b  shown   10   scratches  2/5
+  festival_shiri_9            a  shown   16   scratches  2/3
+  festival_shiri_9            b  shown   11   scratches  2/3
+  gvirti_hanaava2             a  shown   16   scratches  0/2
+  gvirti_hanaava2             b  shown   12   scratches  1/2
+  haloh_halha_hahevraia       a  shown   16   scratches  0/0
+  haloh_halha_hahevraia       b  shown   12   scratches  0/3
+  hio_laylot                  a  shown   18   scratches  0/3
+  hio_laylot                  b  shown   21   scratches  1/2
+  masotav_hamoflaaim          a  shown   19   scratches  9/14
+  masotav_hamoflaaim          b  shown   13   scratches  2/7
+  pierre_et_le_loup           b  shown   16   scratches  3/19
+  rega_im_dodli               a  shown    7   scratches  2/6
+  rega_im_dodli               b  shown    3   scratches  0/3
+  shirim_bezvaaim_tiviim      a  shown   12   scratches  3/7
+  shirim_bezvaaim_tiviim      b  shown   22   scratches  6/9
+
+
+config 2_combined_same_thr   {'PCT_STRONG': 99.3, 'PCT_WEAK': 98.7, 'THR_FLOOR': 25}   lenient=False
+  24 on a pen mark, 2 scratch, 96 dirt, 3 false, 48 unjudged
+  baldi_olier                 a  shown    6   scratches  3/5
+  baldi_olier                 b  shown    5   scratches  0/0
+  dianyland                   a  shown   17   scratches  1/4
+  dianyland                   b  shown   12   scratches  2/5
+  festival_shiri_9            a  shown    7   scratches  3/3
+  festival_shiri_9            b  shown    9   scratches  3/3
+  gvirti_hanaava2             a  shown   11   scratches  0/2
+  gvirti_hanaava2             b  shown   14   scratches  1/2
+  haloh_halha_hahevraia       a  shown   10   scratches  0/0
+  haloh_halha_hahevraia       b  shown    1   scratches  0/3
+  hio_laylot                  a  shown    8   scratches  0/3
+  hio_laylot                  b  shown   15   scratches  0/2
+  masotav_hamoflaaim          a  shown    1   scratches  0/14
+  masotav_hamoflaaim          b  shown    3   scratches  1/7
+  pierre_et_le_loup           b  shown    6   scratches  1/19
+  rega_im_dodli               a  shown    2   scratches  1/6
+  rega_im_dodli               b  shown    6   scratches  0/3
+  shirim_bezvaaim_tiviim      a  shown   19   scratches  3/7
+  shirim_bezvaaim_tiviim      b  shown   22   scratches  6/9
+
+
+config 3_combined_open   {'PCT_STRONG': 99.0, 'PCT_WEAK': 98.2, 'THR_FLOOR': 21}   lenient=False
+  32 on a pen mark, 4 scratch, 125 dirt, 5 false, 111 unjudged
+  baldi_olier                 a  shown   14   scratches  4/5
+  baldi_olier                 b  shown   12   scratches  0/0
+  dianyland                   a  shown   21   scratches  1/4
+  dianyland                   b  shown   14   scratches  2/5
+  festival_shiri_9            a  shown   19   scratches  3/3
+  festival_shiri_9            b  shown   12   scratches  3/3
+  gvirti_hanaava2             a  shown   18   scratches  0/2
+  gvirti_hanaava2             b  shown   19   scratches  2/2
+  haloh_halha_hahevraia       a  shown   18   scratches  0/0
+  haloh_halha_hahevraia       b  shown   10   scratches  0/3
+  hio_laylot                  a  shown   13   scratches  0/3
+  hio_laylot                  b  shown   23   scratches  0/2
+  masotav_hamoflaaim          a  shown    5   scratches  0/14
+  masotav_hamoflaaim          b  shown    5   scratches  2/7
+  pierre_et_le_loup           b  shown   12   scratches  1/19
+  rega_im_dodli               a  shown    2   scratches  1/6
+  rega_im_dodli               b  shown   13   scratches  1/3
+  shirim_bezvaaim_tiviim      a  shown   27   scratches  3/7
+  shirim_bezvaaim_tiviim      b  shown   28   scratches  8/9
+
+
+config 4_combined_wide   {'PCT_STRONG': 98.6, 'PCT_WEAK': 97.6, 'THR_FLOOR': 17}   lenient=False
+  32 on a pen mark, 8 scratch, 144 dirt, 11 false, 195 unjudged
+  baldi_olier                 a  shown   16   scratches  3/5
+  baldi_olier                 b  shown   17   scratches  0/0
+  dianyland                   a  shown   28   scratches  1/4
+  dianyland                   b  shown   21   scratches  1/5
+  festival_shiri_9            a  shown   29   scratches  3/3
+  festival_shiri_9            b  shown   14   scratches  3/3
+  gvirti_hanaava2             a  shown   30   scratches  0/2
+  gvirti_hanaava2             b  shown   25   scratches  2/2
+  haloh_halha_hahevraia       a  shown   25   scratches  0/0
+  haloh_halha_hahevraia       b  shown   15   scratches  0/3
+  hio_laylot                  a  shown   32   scratches  1/3
+  hio_laylot                  b  shown   31   scratches  0/2
+  masotav_hamoflaaim          a  shown   15   scratches  4/14
+  masotav_hamoflaaim          b  shown   12   scratches  2/7
+  pierre_et_le_loup           b  shown   14   scratches  1/19
+  rega_im_dodli               a  shown    3   scratches  1/6
+  rega_im_dodli               b  shown   18   scratches  2/3
+  shirim_bezvaaim_tiviim      a  shown   26   scratches  2/7
+  shirim_bezvaaim_tiviim      b  shown   33   scratches  6/9
+
+
+config 5_combined_loose   {'PCT_STRONG': 98.0, 'PCT_WEAK': 96.8, 'THR_FLOOR': 13}   lenient=False
+  38 on a pen mark, 9 scratch, 170 dirt, 16 false, 401 unjudged
+  baldi_olier                 a  shown   33   scratches  3/5
+  baldi_olier                 b  shown   32   scratches  0/0
+  dianyland                   a  shown   34   scratches  1/4
+  dianyland                   b  shown   25   scratches  1/5
+  festival_shiri_9            a  shown   43   scratches  3/3
+  festival_shiri_9            b  shown   34   scratches  3/3
+  gvirti_hanaava2             a  shown   37   scratches  0/2
+  gvirti_hanaava2             b  shown   39   scratches  2/2
+  haloh_halha_hahevraia       a  shown   45   scratches  0/0
+  haloh_halha_hahevraia       b  shown   21   scratches  1/3
+  hio_laylot                  a  shown   50   scratches  0/3
+  hio_laylot                  b  shown   45   scratches  1/2
+  masotav_hamoflaaim          a  shown   38   scratches  8/14
+  masotav_hamoflaaim          b  shown   30   scratches  2/7
+  pierre_et_le_loup           b  shown   29   scratches  3/19
+  rega_im_dodli               a  shown   11   scratches  2/6
+  rega_im_dodli               b  shown   22   scratches  2/3
+  shirim_bezvaaim_tiviim      a  shown   35   scratches  3/7
+  shirim_bezvaaim_tiviim      b  shown   44   scratches  6/9
+
+
+config 6_combined_wide_lenient   {'PCT_STRONG': 98.6, 'PCT_WEAK': 97.6, 'THR_FLOOR': 17}   lenient=True
+  31 on a pen mark, 9 scratch, 145 dirt, 12 false, 200 unjudged
+  baldi_olier                 a  shown   16   scratches  3/5
+  baldi_olier                 b  shown   17   scratches  0/0
+  dianyland                   a  shown   28   scratches  1/4
+  dianyland                   b  shown   21   scratches  1/5
+  festival_shiri_9            a  shown   31   scratches  3/3
+  festival_shiri_9            b  shown   14   scratches  3/3
+  gvirti_hanaava2             a  shown   30   scratches  0/2
+  gvirti_hanaava2             b  shown   25   scratches  2/2
+  haloh_halha_hahevraia       a  shown   25   scratches  0/0
+  haloh_halha_hahevraia       b  shown   16   scratches  0/3
+  hio_laylot                  a  shown   32   scratches  1/3
+  hio_laylot                  b  shown   31   scratches  0/2
+  masotav_hamoflaaim          a  shown   14   scratches  3/14
+  masotav_hamoflaaim          b  shown   13   scratches  2/7
+  pierre_et_le_loup           b  shown   18   scratches  1/19
+  rega_im_dodli               a  shown    3   scratches  1/6
+  rega_im_dodli               b  shown   18   scratches  2/3
+  shirim_bezvaaim_tiviim      a  shown   26   scratches  2/7
+  shirim_bezvaaim_tiviim      b  shown   33   scratches  6/9

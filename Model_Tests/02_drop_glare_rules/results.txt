@@ -1,0 +1,152 @@
+TEST 2 -- switch off the anti-reflection rules and let the gate cover them.
+
+Three rules were added over the past months, each trading recall for precision
+against glare:
+
+  radial beam   a mark aimed almost dead at the centre AND long is the streak a
+                lamp throws off thousands of concentric grooves. Removes a third
+                of all false detections -- and a needle dropped on a record cuts
+                exactly that shape.
+  bright patch  in the outer ring, a mark sitting inside a pool of light is part
+                of the pool. Tuned to keep only 90% of the scratches, so it is
+                KNOWN to cost up to a tenth of them.
+  groove line   a mark lying along the grooves is the disc's own geometry
+                catching the light, unless it is longer than 250px.
+
+Every one of them fights something that MOVES when the record is tilted, and the
+cross-shot gate kills exactly that: measured, 184 confirmed detections at loose
+thresholds contained 7 false ones. So the rules may now be paying for something
+we already get, and paying in scratches.
+
+Each rule is switched off on its own and then all three together, at the current
+thresholds, so the effect of each is separable. Recall is scored against the pen
+marks and needs no fresh judgement; precision is scored twice -- against the pen
+marks (dirt counts as a mistake) and against every verdict given so far, with
+the unjudged share reported beside it, since a relaxed rule invents detections
+nobody has looked at.
+
+Usage:  python test_02_drop_glare_rules.py [how many records]
+
+
+config                  per photo  confirmed   recall  after gate  scratches  blank   PRECISION  unjudged
+----------------------------------------------------------------------------------------------------------
+1_baseline                   13.7        3.8    37.1%       10.3%   10 of 97      5       98.4%         7
+2_no_radial_beam             15.2        3.9    39.2%       13.4%   13 of 97      3       98.5%         8
+3_no_bright_patch            15.9        4.2    41.2%       11.3%   11 of 97      3       98.5%        11
+4_no_groove_line             23.2        6.7    42.3%       14.4%   14 of 97      2       98.9%        34
+5_none_of_the_three          28.7        7.5    50.5%       20.6%   20 of 97      1       96.1%        40
+
+
+config 1_baseline   nothing changed
+  confirmed: 10 on a pen mark, 1 scratch, 52 dirt, 1 false, 7 unjudged
+  baldi_olier                 a  found   10 -> kept   3   scratches  2/5   ->  1
+  baldi_olier                 b  found   15 -> kept   5   scratches  0/0   ->  0
+  dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
+  dianyland                   b  found   10 -> kept   5   scratches  2/5   ->  1
+  festival_shiri_9            a  found   16 -> kept   5   scratches  2/3   ->  2
+  festival_shiri_9            b  found   11 -> kept   4   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   16 -> kept   8   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   12 -> kept   7   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   16 -> kept   3   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   12 -> kept   0   scratches  0/3   ->  0
+  hio_laylot                  a  found   18 -> kept   6   scratches  0/3   ->  0
+  hio_laylot                  b  found   21 -> kept   7   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   19 -> kept   0   scratches  9/14  ->  0
+  masotav_hamoflaaim          b  found   13 -> kept   0   scratches  2/7   ->  0
+  pierre_et_le_loup           b  found   16 -> kept   5   scratches  3/19  ->  1
+  rega_im_dodli               a  found    7 -> kept   0   scratches  2/6   ->  0
+  rega_im_dodli               b  found    3 -> kept   2   scratches  0/3   ->  0
+  shirim_bezvaaim_tiviim      a  found   12 -> kept   7   scratches  3/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+
+
+config 2_no_radial_beam   {'RADIAL_TOL_DEG': 91.0}
+  confirmed: 12 on a pen mark, 1 scratch, 52 dirt, 1 false, 8 unjudged
+  baldi_olier                 a  found   13 -> kept   3   scratches  2/5   ->  1
+  baldi_olier                 b  found   16 -> kept   5   scratches  0/0   ->  0
+  dianyland                   a  found   11 -> kept   5   scratches  1/4   ->  1
+  dianyland                   b  found   11 -> kept   5   scratches  2/5   ->  1
+  festival_shiri_9            a  found   17 -> kept   5   scratches  2/3   ->  2
+  festival_shiri_9            b  found   12 -> kept   4   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   19 -> kept   8   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   15 -> kept   7   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   17 -> kept   3   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   12 -> kept   0   scratches  0/3   ->  0
+  hio_laylot                  a  found   19 -> kept   6   scratches  0/3   ->  0
+  hio_laylot                  b  found   22 -> kept   7   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   20 -> kept   2   scratches  9/14  ->  3
+  masotav_hamoflaaim          b  found   16 -> kept   0   scratches  2/7   ->  0
+  pierre_et_le_loup           b  found   18 -> kept   5   scratches  4/19  ->  1
+  rega_im_dodli               a  found    7 -> kept   1   scratches  2/6   ->  0
+  rega_im_dodli               b  found    9 -> kept   2   scratches  0/3   ->  0
+  shirim_bezvaaim_tiviim      a  found   13 -> kept   7   scratches  4/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+
+
+config 3_no_bright_patch   {'GLARE_PATCH_MAX': 256}
+  confirmed: 11 on a pen mark, 1 scratch, 55 dirt, 1 false, 11 unjudged
+  baldi_olier                 a  found   12 -> kept   3   scratches  2/5   ->  1
+  baldi_olier                 b  found   20 -> kept   5   scratches  0/0   ->  0
+  dianyland                   a  found   13 -> kept   5   scratches  1/4   ->  1
+  dianyland                   b  found   12 -> kept   6   scratches  2/5   ->  1
+  festival_shiri_9            a  found   17 -> kept   5   scratches  2/3   ->  2
+  festival_shiri_9            b  found   13 -> kept   4   scratches  2/3   ->  1
+  gvirti_hanaava2             a  found   18 -> kept   8   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   13 -> kept   7   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   17 -> kept   3   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   16 -> kept   0   scratches  2/3   ->  0
+  hio_laylot                  a  found   18 -> kept   6   scratches  0/3   ->  0
+  hio_laylot                  b  found   23 -> kept   9   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   21 -> kept   0   scratches  9/14  ->  0
+  masotav_hamoflaaim          b  found   14 -> kept   1   scratches  3/7   ->  1
+  pierre_et_le_loup           b  found   18 -> kept   5   scratches  3/19  ->  1
+  rega_im_dodli               a  found   15 -> kept   3   scratches  3/6   ->  0
+  rega_im_dodli               b  found    8 -> kept   2   scratches  0/3   ->  0
+  shirim_bezvaaim_tiviim      a  found   13 -> kept   8   scratches  3/7   ->  1
+  shirim_bezvaaim_tiviim      b  found   22 -> kept   0   scratches  6/9   ->  0
+
+
+config 4_no_groove_line   {'GROOVE_TOL_DEG': -1.0}
+  confirmed: 14 on a pen mark, 2 scratch, 75 dirt, 1 false, 34 unjudged
+  baldi_olier                 a  found   19 -> kept   4   scratches  2/5   ->  1
+  baldi_olier                 b  found   25 -> kept   7   scratches  0/0   ->  0
+  dianyland                   a  found   19 -> kept   7   scratches  1/4   ->  1
+  dianyland                   b  found   25 -> kept   7   scratches  2/5   ->  1
+  festival_shiri_9            a  found   27 -> kept   7   scratches  2/3   ->  2
+  festival_shiri_9            b  found   22 -> kept   7   scratches  3/3   ->  2
+  gvirti_hanaava2             a  found   25 -> kept  13   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   23 -> kept  10   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   25 -> kept   8   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   33 -> kept   4   scratches  0/3   ->  0
+  hio_laylot                  a  found   20 -> kept  10   scratches  0/3   ->  0
+  hio_laylot                  b  found   31 -> kept  11   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   31 -> kept   4   scratches  9/14  ->  0
+  masotav_hamoflaaim          b  found   22 -> kept   0   scratches  3/7   ->  0
+  pierre_et_le_loup           b  found   26 -> kept  11   scratches  3/19  ->  1
+  rega_im_dodli               a  found    8 -> kept   1   scratches  2/6   ->  0
+  rega_im_dodli               b  found   14 -> kept   4   scratches  3/3   ->  2
+  shirim_bezvaaim_tiviim      a  found   18 -> kept  12   scratches  3/7   ->  2
+  shirim_bezvaaim_tiviim      b  found   27 -> kept   0   scratches  6/9   ->  0
+
+
+config 5_none_of_the_three   {'RADIAL_TOL_DEG': 91.0, 'GLARE_PATCH_MAX': 256, 'GROOVE_TOL_DEG': -1.0}
+  confirmed: 18 on a pen mark, 2 scratch, 78 dirt, 4 false, 40 unjudged
+  baldi_olier                 a  found   24 -> kept   4   scratches  2/5   ->  1
+  baldi_olier                 b  found   31 -> kept   8   scratches  0/0   ->  0
+  dianyland                   a  found   27 -> kept   9   scratches  1/4   ->  1
+  dianyland                   b  found   32 -> kept   9   scratches  3/5   ->  2
+  festival_shiri_9            a  found   29 -> kept   7   scratches  2/3   ->  2
+  festival_shiri_9            b  found   27 -> kept   6   scratches  3/3   ->  2
+  gvirti_hanaava2             a  found   35 -> kept  13   scratches  0/2   ->  0
+  gvirti_hanaava2             b  found   29 -> kept  10   scratches  1/2   ->  1
+  haloh_halha_hahevraia       a  found   26 -> kept   8   scratches  0/0   ->  0
+  haloh_halha_hahevraia       b  found   38 -> kept   6   scratches  2/3   ->  1
+  hio_laylot                  a  found   22 -> kept  11   scratches  0/3   ->  0
+  hio_laylot                  b  found   35 -> kept  13   scratches  1/2   ->  1
+  masotav_hamoflaaim          a  found   33 -> kept   5   scratches  9/14  ->  2
+  masotav_hamoflaaim          b  found   28 -> kept   2   scratches  5/7   ->  2
+  pierre_et_le_loup           b  found   28 -> kept  11   scratches  4/19  ->  1
+  rega_im_dodli               a  found   23 -> kept   3   scratches  3/6   ->  0
+  rega_im_dodli               b  found   30 -> kept   5   scratches  3/3   ->  2
+  shirim_bezvaaim_tiviim      a  found   21 -> kept  13   scratches  4/7   ->  2
+  shirim_bezvaaim_tiviim      b  found   27 -> kept   0   scratches  6/9   ->  0

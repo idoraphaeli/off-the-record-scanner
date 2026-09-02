@@ -308,8 +308,18 @@ def _grade_side(shots, want_overlay=True, side_name=None):
                 m["photo"] = 1
             marks = list(a["marks"])
         else:
-            in_b = crossshot.confirm(a["marks"], b["marks"], delta)
-            in_a = crossshot.confirm(b["marks"], a["marks"], -delta)
+            # The label gets the angle to within a couple of degrees, and it is
+            # biased rather than noisy -- every pair on a side is off the same
+            # way. Correcting it from the pairs themselves is what lets the
+            # match window be as tight as it now is.
+            delta, moved, spread, n_pairs = crossshot.refine_rotation(
+                a["marks"], b["marks"], delta)
+            # a side with too few pairs to correct keeps the old, wider window:
+            # a tight window around an uncorrected angle confirms nothing
+            window = (crossshot.ANG_TOL if spread is not None
+                      else crossshot.ANG_TOL_UNCORRECTED)
+            in_b = crossshot.confirm(a["marks"], b["marks"], delta, window)
+            in_a = crossshot.confirm(b["marks"], a["marks"], -delta, window)
             for m, seen in zip(a["marks"], in_b):
                 m["seen_in_both_shots"] = bool(seen)
                 m["photo"] = 1
@@ -327,6 +337,13 @@ def _grade_side(shots, want_overlay=True, side_name=None):
             cross.update({
                 "used": True, "rotation_deg": round(delta, 1),
                 "alignment_confidence": round(ratio, 1),
+                # kept so a bad side can be told apart from a bad label: a large
+                # correction with a small spread is the alignment working, while
+                # spread None means there were too few pairs to correct at all
+                "angle_correction_deg": round(moved, 2),
+                "pair_spread_deg": None if spread is None else round(spread, 2),
+                "pairs_used": n_pairs,
+                "match_window_deg": window,
                 "confirmed": int(sum(in_b)),
                 "only_in_photo_1": int(len(in_b) - sum(in_b)),
                 "only_in_photo_2": int(len(in_a) - sum(in_a)),
