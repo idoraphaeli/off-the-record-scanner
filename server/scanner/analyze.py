@@ -133,7 +133,20 @@ GRADE_BANDS = ((98, "M (Mint)"),
 # This is evidence, not calibration. That the collection's shape is right is no
 # proof the absolute placement is, and the honest fix is unchanged: grade 20-30
 # records by eye, see what index each gets, and pin this number to that.
-SCORE_HALF_AT = 35.0
+#
+# Refitted from 35 when the detector changed to report only what BOTH shots saw.
+# That paints 9.6 marks a photograph rather than 14.8, so the same record
+# produces a smaller index and would come out a band better for no reason but a
+# change in what we count: left at 35, 29 of 72 sides come out Near Mint where
+# one did before. Measured over calibration and validation, the new index runs at
+# 0.385 of the old, so the constant moves with it.
+#
+# It does not map one model onto the other, and cannot: the ratio's quartiles are
+# 0.23 to 0.54, because the new detector disagrees with the old about WHICH
+# records are damaged rather than scaling them all down. Thirty-four of 72 sides
+# still change band, against 51 unrefitted. This holds the distribution, not the
+# individual record.
+SCORE_HALF_AT = 13.5
 
 
 def _paint(img, det_mask, keep_inside=None):
@@ -202,16 +215,18 @@ def _score_of(marks):
     return _band(score), round(score), round(index, 2), round(1000.0 * raw, 2)
 
 
-def _detect(image_bytes, index, want_overlay):
-    """One photograph, reduced to the small things the rest of the code needs.
+def _prepare(image_bytes, index):
+    """One photograph, taken as far as it can go ALONE.
 
-    Everything heavy — the decoded image, the unwrapped ring, the response maps,
-    the component labels — is finished with and released before this returns.
-    That matters: a whole record is four photographs, and holding all four sets
-    of intermediates at once exhausted the 512 MB the service runs in, which
-    killed the process mid-request and returned a 502. Nothing outside this
-    function ever sees a numpy array now, so peak memory is one photograph
-    rather than four.
+    It stops before the threshold, because this detector does not decide
+    anything from one photograph. What comes back is the response map — a number
+    per point on the disc saying how scratch-like it is — and the two shots of a
+    side are combined into one map before anything is called a mark.
+
+    That means two photographs' maps have to be alive at the same time, where the
+    old arrangement only ever held one. Two is affordable and four is not, which
+    is why a record is still walked one SIDE at a time and everything is dropped
+    between sides.
     """
     img = detector.decode_image(image_bytes)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -220,24 +235,7 @@ def _detect(image_bytes, index, want_overlay):
     inner_px = int(P["LABEL_R"] * radius)
     outer_px = int(P["OUTER_R"] * radius)
     ring = detector.unwrap(gray, center, radius)[inner_px:outer_px]
-    ring_h, ring_area = ring.shape[0], ring.shape[0] * ring.shape[1]
-
     radial, tram, dead = detector.scratch_map(ring)
-    mask_r, marks_r = detector.extract(radial, None, ring, inner_px, radius)
-    mask_t, marks_t = detector.extract(tram, P["TRAM_MIN_LEN"], ring, inner_px, radius)
-    marks = marks_r + marks_t
-    del radial, tram
-
-    for m in marks:
-        # position on the RECORD, not in the photo, so it stays meaningful
-        # across shots taken at different angles — and so the other shot has
-        # something it can be compared against
-        m["radius_frac"] = round((inner_px + m.pop("polar_row")) / radius, 3)
-        m["angle_deg"] = round(360.0 * m.pop("polar_col") / P["POLAR_STEPS"], 1)
-        # both sizes as fractions of this photo's own playing surface, so the
-        # phone's distance cannot change how much a mark counts
-        m["radial_span_frac"] = round(m.pop("radial_span_px") / max(ring_h, 1), 3)
-        m["area_frac"] = (m["length_px"] * max(m["thickness_px"], 1.0)) / max(ring_area, 1)
 
     judged = 100.0 * float((~dead).mean())
     warnings = []
@@ -253,7 +251,6 @@ def _detect(image_bytes, index, want_overlay):
 
     report = {
         "photo": index,
-        "mark_count": len(marks),
         "coverage": {
             "judged_pct": round(judged, 1),
             "unlit_pct": round(100.0 * float((detector.unlit_mask(ring) > 0).mean()), 1),
@@ -262,117 +259,169 @@ def _detect(image_bytes, index, want_overlay):
                  "radius_px": radius, "found_by": how},
         "warnings": warnings,
     }
-    if want_overlay:
-        report["overlay_png"] = _overlay(img, cv2.bitwise_or(mask_r, mask_t),
-                                         inner_px, center, radius, gray.shape)
-
-    # the label strip is the one array that has to outlive this call, and it is
-    # a few hundred kilobytes rather than tens of megabytes
     profile = crossshot.label_profile(gray, center, radius)
+    del dead
+    return {"img": img, "shape": gray.shape, "ring": ring, "radial": radial,
+            "tram": tram, "inner_px": inner_px, "center": center,
+            "radius": radius, "report": report, "profile": profile}
 
-    del img, gray, ring, dead, mask_r, mask_t
-    _release_memory()
-    return {"marks": marks, "report": report, "profile": profile}
+
+def _marks_of(ring_mask, marks, inner_px, radius, ring):
+    """The detector's raw marks, given the sizes the grade needs."""
+    ring_h, ring_area = ring.shape[0], ring.shape[0] * ring.shape[1]
+    for m in marks:
+        # position on the RECORD, not in the photo, so it stays meaningful
+        # across shots taken at different angles
+        m["radius_frac"] = round((inner_px + m.pop("polar_row")) / radius, 3)
+        m["angle_deg"] = round(360.0 * m.pop("polar_col") / P["POLAR_STEPS"], 1)
+        # both sizes as fractions of the photo's own playing surface, so the
+        # phone's distance cannot change how much a mark counts
+        m["radial_span_frac"] = round(m.pop("radial_span_px") / max(ring_h, 1), 3)
+        m["area_frac"] = (m["length_px"] * max(m["thickness_px"], 1.0)) / max(ring_area, 1)
+        # every mark this detector reports was present in both shots; that is
+        # what being on the combined map means
+        m["seen_in_both_shots"] = True
+    return marks
+
+
+def _into_frame_of(ring_mask, shot, delta):
+    """The combined mask, which lives in the FIRST shot's frame, moved into the
+    second's — so both photographs come back marked in the same places on the
+    record rather than each carrying its own separate findings."""
+    h = shot["ring"].shape[0]
+    m = ring_mask
+    if m.shape[0] != h:
+        m = cv2.resize(m, (m.shape[1], h), interpolation=cv2.INTER_NEAREST)
+    return np.roll(m, int(round(delta / 360.0 * P["POLAR_STEPS"])), axis=1)
+
+
+STATUS_OK = "ok"
+STATUS_NOT_ALIGNED = "alignment_failed"
+STATUS_NEEDS_TWO = "needs_two_photos"
+
+RETAKE_NOTE = ("the two photos of this side could not be matched to each other "
+               "— please take them again")
+
+
+def _unjudged(shots, status, note, want_overlay, side_name):
+    """A side we could not read, said so plainly.
+
+    Every mark this detector reports was seen in BOTH photographs, so when the
+    two cannot be matched there is nothing to report — and an empty result is
+    not the same statement as a clean record. Returning one would grade a
+    scratched disc perfect, and the buyer is the person who finds out. So there
+    is no grade and no score here at all: the caller has to handle the status,
+    and the photographs go back exactly as they came in, unmarked.
+    """
+    out = {
+        "status": status,
+        "grade": None,
+        "quality_score": None,
+        "mark_count": 0,
+        "marks": [],
+        "needs_retake": True,
+        "message": note,
+        "photos": [],
+        "cross_shot": {"used": False, "rotation_deg": None, "confirmed": 0,
+                       "note": note},
+        "warnings": [note] + [w for s in shots for w in s["report"]["warnings"]],
+    }
+    for s in shots:
+        report = dict(s["report"])
+        report["mark_count"] = 0
+        if want_overlay:
+            # the plain photograph: an empty mask paints nothing
+            report["overlay_png"] = _overlay(
+                s["img"], np.zeros_like(s["ring"]), s["inner_px"],
+                s["center"], s["radius"], s["shape"])
+        out["photos"].append(report)
+    if side_name:
+        out["side"] = side_name
+    return out
 
 
 def _grade_side(shots, want_overlay=True, side_name=None):
-    """One side, from one or two photographs of it."""
+    """One side, from the two photographs of it.
+
+    The two response maps are brought into the same frame and the pixelwise
+    minimum is taken, so a point survives only if BOTH shots saw it. A lamp's
+    reflection moves when the disc is tilted, so the other shot has nothing
+    where it was and the minimum cuts it to nothing; a scratch is in the vinyl
+    and stays put. Only then is a threshold applied, and what comes out is one
+    set of marks for the side rather than two sets to be reconciled.
+
+    Measured over 30 calibration records with every mark hand-judged: 96%
+    precision against 87% for thresholding each shot separately, and 21 outright
+    false marks in 528 against 71. It costs recall — 34% against 46% — which is
+    the trade this detector is making on purpose.
+    """
     a = shots[0]
     b = shots[1] if len(shots) > 1 else None
-
-    cross = {"used": False, "rotation_deg": None, "confirmed": 0,
-             "note": "only one photograph of this side was supplied"}
-    marks = []
-    warnings = []
-
     if b is None:
-        for m in a["marks"]:
-            m["seen_in_both_shots"] = None
-            m["photo"] = 1
-        marks = list(a["marks"])
-    else:
-        delta, ratio = crossshot.rotation_from_label(a["profile"], b["profile"])
-        if delta is None:
-            # A label with no print cannot say how the disc turned between the
-            # two shots. Without that, a mark in one photo cannot be matched to
-            # a mark in the other, so the second shot is set aside entirely:
-            # counting its marks as new would double every defect, and calling
-            # them unconfirmed would punish each mark for the label rather than
-            # for anything about itself.
-            cross["note"] = ("the two photos of this side could not be lined up: "
-                             "this label has too little print to show how the "
-                             "disc turned, so only the first was graded")
-            warnings.append(cross["note"])
-            for m in a["marks"]:
-                m["seen_in_both_shots"] = None
-                m["photo"] = 1
-            marks = list(a["marks"])
-        else:
-            # The label gets the angle to within a couple of degrees, and it is
-            # biased rather than noisy -- every pair on a side is off the same
-            # way. Correcting it from the pairs themselves is what lets the
-            # match window be as tight as it now is.
-            delta, moved, spread, n_pairs = crossshot.refine_rotation(
-                a["marks"], b["marks"], delta)
-            # a side with too few pairs to correct keeps the old, wider window:
-            # a tight window around an uncorrected angle confirms nothing
-            window = (crossshot.ANG_TOL if spread is not None
-                      else crossshot.ANG_TOL_UNCORRECTED)
-            in_b = crossshot.confirm(a["marks"], b["marks"], delta, window)
-            in_a = crossshot.confirm(b["marks"], a["marks"], -delta, window)
-            for m, seen in zip(a["marks"], in_b):
-                m["seen_in_both_shots"] = bool(seen)
-                m["photo"] = 1
-                marks.append(m)
-            # A defect the lamp missed in the first shot is still on the record,
-            # so the second shot's own finds are added — but only those that did
-            # NOT match something already counted, or every confirmed mark would
-            # be counted twice.
-            for m, seen in zip(b["marks"], in_a):
-                if seen:
-                    continue
-                m["seen_in_both_shots"] = False
-                m["photo"] = 2
-                marks.append(m)
-            cross.update({
-                "used": True, "rotation_deg": round(delta, 1),
-                "alignment_confidence": round(ratio, 1),
-                # kept so a bad side can be told apart from a bad label: a large
-                # correction with a small spread is the alignment working, while
-                # spread None means there were too few pairs to correct at all
-                "angle_correction_deg": round(moved, 2),
-                "pair_spread_deg": None if spread is None else round(spread, 2),
-                "pairs_used": n_pairs,
-                "match_window_deg": window,
-                "confirmed": int(sum(in_b)),
-                "only_in_photo_1": int(len(in_b) - sum(in_b)),
-                "only_in_photo_2": int(len(in_a) - sum(in_a)),
-                "note": "both photos were graded together"})
+        return _unjudged(shots, STATUS_NEEDS_TWO,
+                         "this side needs two photographs, taken with the disc "
+                         "tilted differently between them",
+                         want_overlay, side_name)
+
+    delta, ratio, how = crossshot.align(a["radial"], b["radial"],
+                                        a["profile"], b["profile"])
+    if delta is None:
+        return _unjudged(shots, STATUS_NOT_ALIGNED, RETAKE_NOTE,
+                         want_overlay, side_name)
+
+    steps = P["POLAR_STEPS"]
+    rad = crossshot.combine(a["radial"], b["radial"], delta, steps)
+    tra = crossshot.combine(a["tram"], b["tram"], delta, steps)
+    mask_r, marks_r = detector.extract(rad, None, a["ring"], a["inner_px"],
+                                       a["radius"])
+    mask_t, marks_t = detector.extract(tra, P["TRAM_MIN_LEN"], a["ring"],
+                                       a["inner_px"], a["radius"])
+    del rad, tra
+    ring_mask = cv2.bitwise_or(mask_r, mask_t)
+    marks = _marks_of(ring_mask, marks_r + marks_t, a["inner_px"], a["radius"],
+                      a["ring"])
+    for m in marks:
+        m["photo"] = 1
 
     for m in marks:
-        conf = (CONF_NO_SECOND if m["seen_in_both_shots"] is None
-                else (CONF_SEEN_TWICE if m["seen_in_both_shots"] else CONF_SEEN_ONCE))
         cut = _looks_like_a_cut(m)
-        m["weight"] = round(cut * _tracks_crossed(m) * conf, 3)
+        m["weight"] = round(cut * _tracks_crossed(m) * CONF_SEEN_TWICE, 3)
         m["looks_like"] = "a cut" if cut > 0.75 else ("dirt" if cut < 0.45 else "unclear")
         m["area_frac"] = round(m["area_frac"], 6)
 
     grade, score, index, raw_index = _score_of(marks)
-    photos = [s["report"] for s in shots]
-    for p in photos:
-        warnings.extend(p["warnings"])
+    photos, warnings = [], []
+    for i, s in enumerate(shots):
+        report = dict(s["report"])
+        report["mark_count"] = len(marks)
+        if want_overlay:
+            # both photographs carry the SAME marks, each drawn where they fall
+            # in that photograph — they are one set of findings about one side,
+            # not two separate opinions
+            here = ring_mask if i == 0 else _into_frame_of(ring_mask, s, delta)
+            report["overlay_png"] = _overlay(s["img"], here, s["inner_px"],
+                                             s["center"], s["radius"], s["shape"])
+        photos.append(report)
+        warnings.extend(report["warnings"])
 
     out = {
+        "status": STATUS_OK,
         "grade": grade,
         "quality_score": score,
         "damage_index": index,
         "damage_index_unweighted": raw_index,
         "grade_is_calibrated": False,   # the bands are the standard; the curve
                                         # that reaches them is not yet pinned
+        "needs_retake": False,
+        "message": "",
         "mark_count": len(marks),
         "marks": marks,
         "photos": photos,
-        "cross_shot": cross,
+        "cross_shot": {
+            "used": True, "rotation_deg": round(delta, 1),
+            "aligned_by": how, "alignment_confidence": round(ratio, 1),
+            "confirmed": len(marks),
+            "note": "both photos were combined before anything was called a mark"},
         "warnings": warnings,
     }
     if side_name:
@@ -383,10 +432,14 @@ def _grade_side(shots, want_overlay=True, side_name=None):
 def analyze(image_bytes, want_overlay=True, second_image_bytes=None):
     """One side of a record, from one photograph or two."""
     started = time.time()
-    shots = [_detect(image_bytes, 1, want_overlay)]
+    shots = [_prepare(image_bytes, 1)]
     if second_image_bytes:
-        shots.append(_detect(second_image_bytes, 2, want_overlay))
-    result = _grade_side(shots, want_overlay)
+        shots.append(_prepare(second_image_bytes, 2))
+    try:
+        result = _grade_side(shots, want_overlay)
+    finally:
+        del shots
+        _release_memory()
     # the first photo's overlay is also offered at the top level, so a caller
     # that only ever sends one image does not have to walk the photos list
     if want_overlay and result["photos"]:
@@ -407,25 +460,53 @@ def analyze_record(sides, want_overlay=True):
     for name, images in sides.items():
         if not images:
             continue
-        # one photograph at a time, and the side is reduced to its result before
-        # the next side starts. Four photographs' worth of intermediates held at
-        # once does not fit in the memory this service runs in.
-        shots = []
-        for i, data in enumerate(images, 1):
-            shots.append(_detect(data, i, want_overlay))
-        graded[name] = _grade_side(shots, want_overlay, side_name=name)
-        del shots
-        _release_memory()
+        # Both photographs of a side at once, because they are combined before
+        # anything is decided -- but one SIDE at a time, and everything dropped
+        # before the next. Two photographs' worth of intermediates fits; four
+        # does not, and holding four is what used to kill the process mid-request
+        # and return a 502.
+        shots = [_prepare(data, i) for i, data in enumerate(images, 1)]
+        try:
+            graded[name] = _grade_side(shots, want_overlay, side_name=name)
+        finally:
+            del shots
+            _release_memory()
 
     if not graded:
         raise ValueError("no photographs were supplied")
 
+    # A side we could not read takes the whole record with it. Grading the other
+    # side alone and calling that the record's condition answers a question we
+    # did not manage to ask: the side we could not read might be the damaged one.
+    retake = [name for name, s in graded.items() if s.get("needs_retake")]
+    if retake:
+        which = " and ".join(sorted(retake))
+        return {
+            "status": STATUS_NOT_ALIGNED,
+            "grade": None,
+            "quality_score": None,
+            "needs_retake": True,
+            "sides_to_retake": sorted(retake),
+            "message": (f"side {which}: " + RETAKE_NOTE.split("— ")[0].strip()
+                        + " — please photograph "
+                        + ("that side" if len(retake) == 1 else "those sides")
+                        + " again"),
+            "sides": graded,
+            "mark_count": 0,
+            "warnings": [w for s in graded.values() for w in s["warnings"]],
+            "elapsed_ms": int(1000 * (time.time() - started)),
+        }
+
     worst = min(graded.values(), key=lambda s: s["quality_score"])
     return {
+        "status": STATUS_OK,
         "grade": worst["grade"],
         "quality_score": worst["quality_score"],
         "graded_from_side": worst.get("side"),
         "grade_is_calibrated": False,
+        "needs_retake": False,
+        "sides_to_retake": [],
+        "message": "",
         "sides": graded,
         "mark_count": sum(s["mark_count"] for s in graded.values()),
         "warnings": [w for s in graded.values() for w in s["warnings"]],
